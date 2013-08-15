@@ -94,10 +94,7 @@
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
 
-                //
-
                 window.addEventListener('resize', onWindowResize, false);
-
             }
 
             function onWindowResize() {
@@ -106,7 +103,6 @@
                 camera.updateProjectionMatrix();
 
                 renderer.setSize(window.innerWidth, window.innerHeight);
-
             }
 
             function onDocumentMouseDown(event) {
@@ -120,11 +116,6 @@
 
                 onPointerDownLon = lon;
                 onPointerDownLat = lat;
-                console.log(lon.toString() + " " + lat.toString());
-
-                //alert(lon.toString() + " " + lat.toString());
-
-
             }
 
             function onDocumentMouseMove(event) {
@@ -175,9 +166,7 @@
 
                 }
 
-                if (bool === false) {
-                    var oldLat = lat;
-                    var oldLon = lon;
+                if (bool === false && sub < 0) {
                     if (lat >= 0 && lat <= 10 && lon <= -70 && lon >= -80) {
                         var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
 
