@@ -123,7 +123,7 @@
                 if (isUserInteracting) {
 
                     lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
-                    
+
                     var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
                     lat = Math.max(rawLat, latLimit);
                 }
@@ -171,7 +171,7 @@
 
                 if (bool === false && sub < 0) {
                     if (lat >= 0 && lat <= 10 && lon <= -70 && lon >= -80) {
-                        
+
                         var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
 
                             var mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
