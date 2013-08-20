@@ -188,7 +188,7 @@
 
                         var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
                             
-                            mesh.material = new THREE.MeshBasicMaterial({map: texture});
+                            mesh.material.map = texture;
                             fov = 70;
                             lat = -6;
                             lon = 50;
