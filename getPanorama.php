@@ -1,10 +1,10 @@
 <?php
 
 $q = $_GET["q"];
-$con = mysqli_connect("localhost", "Panorama", "", "Panorama");
+$con = mysqli_connect("localhost", "root", "eddie?54", "Panorama");
 
 if (mysqli_connect_errno($con)) {
-    echo "Fail ";
+    echo "Fail";
 }
 
 $result = mysqli_query($con, "SELECT * FROM Panorama WHERE ID='" . $q . "'");

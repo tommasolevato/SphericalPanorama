@@ -1,5 +1,5 @@
 
-function initPhpCall(Id)
+function getPanorama(Id)
 {
     if (window.XMLHttpRequest)
     {// code for IE7+, Firefox, Chrome, Opera, Safari
@@ -16,7 +16,7 @@ function initPhpCall(Id)
 //    
 //    }
 //  }
-    xmlhttp.open("GET", "mysqlconnect.php?q=" + Id, false);
+    xmlhttp.open("GET", "getPanorama.php?q=" + Id, false);
     xmlhttp.send();
 }
 
@@ -24,7 +24,7 @@ function initPhpCall(Id)
 
 
 
-function linkPhpCall(Id)
+function getNextPanorama(Id)
 {
     if (window.XMLHttpRequest)
     {// code for IE7+, Firefox, Chrome, Opera, Safari
@@ -41,6 +41,6 @@ function linkPhpCall(Id)
 //    
 //    }
 //  }
-    xmlhttp.open("GET", "mysqlconnectLink.php?q=" + Id, false);
+    xmlhttp.open("GET", "getNextPanorama.php?q=" + Id, false);
     xmlhttp.send();
 }

@@ -7,7 +7,7 @@ if (mysqli_connect_errno($con)) {
     echo "Fail ";
 }
 
-$result = mysqli_query($con, "SELECT * FROM Collegamento INNER JOIN Panorama ON Collegamento.IdCalled=Panorama.ID WHERE IdCalling='" . $q . "'");
+$result = mysqli_query($con, "SELECT * FROM Panorama JOIN Collegamento ON Panorama.ID = Collegamento.IdCalled WHERE IdCalling='" . $q . "'");
 
 //while($row=  mysqli_fetch_array($result)){
 //    $arr = array( 'IdCalling'=>$row['IdCalling'], 'IdCalled' => $row['IdCalled'],
@@ -31,7 +31,7 @@ while ($row = mysqli_fetch_array($result)) {
         'Panorama' => $row['Panorama'], 'Latitude' => $row['Latitude'], 'Longitude' => $row['Longitude']);
     json_encode($arr);
     $all[strval($i)] = $arr;
-    $i = $i + 1;
+    $i++;
 }
 echo json_encode($all);
 
