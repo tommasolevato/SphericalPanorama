@@ -34,6 +34,8 @@
 
         <script src="js/three.min.js"></script>
         <script src="js/OBJLoader.js"></script>
+        <script src="js/MTLLoader.js"></script>
+        <script src="js/OBJMTLLoader.js"></script>
         <script src="js/test.js"></script>
 
         <script>
@@ -60,28 +62,34 @@
 
 
             function init() {
-                var container, mesh;
-
-                container = document.getElementById('container');
+                var container = document.getElementById('container');
 
                 camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
                 camera.target = new THREE.Vector3(0, 0, 0);
 
-
                 scene = new THREE.Scene();
 
-                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/pano1.jpg')}));
+                var mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/pano1.jpg')}));
                 mesh.scale.x = -1;
                 scene.add(mesh);
 
-                var loader = new THREE.OBJLoader();
+                var pointLight = new THREE.PointLight(0xFFFFFF);
+                scene.add(pointLight);
 
-                loader.load('object/corrimano.obj', function(object) {
+                var loader = new THREE.OBJMTLLoader();
+                loader.addEventListener('load', function(event) {
 
+                    var object = event.content;
                     object.position.z = -10;
+                    object.position.y = -3;
+                    object.scale.x = 2;
+                    object.scale.y = 2;
+                    object.scale.z = 2;
                     scene.add(object);
 
                 });
+
+                loader.load('object/mobile.obj', 'object/mobile.mtl');
 
                 renderer = new THREE.WebGLRenderer();
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -106,8 +114,6 @@
             }
 
             function onDocumentMouseDown(event) {
-
-                event.preventDefault();
 
                 isUserInteracting = true;
 
@@ -147,14 +153,11 @@
                     if (event.wheelDeltaY) {
 
                         fov -= event.wheelDeltaY * 0.05;
-
-
                         // Opera / Explorer 9
 
                     } else if (event.wheelDelta) {
 
                         fov -= event.wheelDelta * 0.05;
-
                         // Firefox
 
                     } else if (event.detail) {
@@ -169,11 +172,11 @@
                 }
 
                 if (bool === false && sub < 0) {
-                    if (lat >= 0 && lat <= 10 && lon <= -70 && lon >= -80) {
+                    if (lat >= -10 && lat <= 10 && lon <= 290 && lon >= 280) {
 
                         var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
 
-                            var mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
+                            mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
                             fov = 70;
                             mesh.scale.x = -1;
                             scene = new THREE.Scene();
