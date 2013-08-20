@@ -115,7 +115,7 @@
                     projector.unprojectVector(vector, camera);
                     var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
                     var intersects = raycaster.intersectObjects(objects, true);
-                    if (intersects[0].point !== undefined)
+                    if (intersects[0] !== undefined)
                         alert("mi hanno cliccato!");
                 }, false);
             }
