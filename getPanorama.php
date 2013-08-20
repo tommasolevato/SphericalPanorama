@@ -10,7 +10,6 @@ if (mysqli_connect_errno($con)) {
 $result = mysqli_query($con, "SELECT * FROM Panorama WHERE ID='" . $q . "'");
 
 
-
 //$row=  mysqli_fetch_array($result,MYSQLI_ASSOC);
 //echo $row["Panorama"];
 

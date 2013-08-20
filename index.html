@@ -49,7 +49,9 @@
                     lon = 0, onMouseDownLon = 0,
                     lat = 0, onMouseDownLat = 0,
                     phi = 0, theta = 0,
-                    latLimit = -33,
+                    
+                    //senza latLimit "guardando" in basso si vede un buco nero
+                    latLimit = -30,
                     projector;
 
             init();
@@ -66,8 +68,8 @@
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
                 getPanorama(1);
-                var pano = xmlhttp.responseText;
-                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/' + pano)}));
+                var panoName = xmlhttp.responseText;
+                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/' + panoName)}));
                 mesh.scale.x = -1;
                 scene.add(mesh);
 
@@ -76,7 +78,7 @@
 
                 var loader = new THREE.OBJMTLLoader();
                 loader.addEventListener('load', function(event) {
-
+                    //TODO: caricarli dal database
                     var object = event.content;
                     object.position.z = -10;
                     object.position.y = -3;
@@ -113,7 +115,7 @@
                     var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
                     var intersects = raycaster.intersectObjects(objects, true);
                     if (intersects[0] !== undefined)
-                        //qui scelgo cosa fare con l'oggetto attuale in qualche modo
+                        //TODO: qui scelgo cosa fare con l'oggetto attuale in qualche modo
                         alert("mi hanno cliccato!");
                 }, false);
             }
@@ -142,7 +144,6 @@
                 if (isUserInteracting) {
 
                     lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
-
                     var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
                     lat = Math.max(rawLat, latLimit);
                 }
@@ -158,7 +159,8 @@
                 //console.log(lon.toString() + " " + lat.toString());
                 var sub = fov - event.wheelDeltaY * 0.05;
                 var bool = false;
-                if (0 <= sub && sub <= 70) {
+                //TODO: sostituire 20 con una variabile (maxZoom, per esempio)
+                if (20 <= sub && sub <= 70) {
                     bool = true;
 
                     // WebKit
@@ -184,7 +186,8 @@
 
                 }
 
-                if (bool === false && sub < 0) {
+                if (bool === false && sub < 20) {
+                    //TODO: prenderli dal database
                     if (lat >= -10 && lat <= 10 && lon <= 290 && lon >= 280) {
 
                         var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
@@ -194,12 +197,8 @@
                             lat = -6;
                             lon = 50;
                         }, '');
-
-
                     }
                 }
-
-
             }
 
             function animate() {
