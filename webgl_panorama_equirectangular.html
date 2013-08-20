@@ -46,7 +46,7 @@
 
 
             var camera, scene, renderer;
-
+            var objects = [];
             var fov = 70,
                     texture_placeholder,
                     isUserInteracting = false,
@@ -54,7 +54,8 @@
                     lon = 0, onMouseDownLon = 0,
                     lat = 0, onMouseDownLat = 0,
                     phi = 0, theta = 0,
-                    latLimit = -33;
+                    latLimit = -33,
+                    projector;
 
             init();
             animate();
@@ -68,7 +69,7 @@
                 camera.target = new THREE.Vector3(0, 0, 0);
 
                 scene = new THREE.Scene();
-
+                projector = new THREE.Projector();
                 var mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/pano1.jpg')}));
                 mesh.scale.x = -1;
                 scene.add(mesh);
@@ -86,6 +87,7 @@
                     object.scale.y = 2;
                     object.scale.z = 2;
                     scene.add(object);
+                    objects.push(object);
 
                 });
 
@@ -103,6 +105,19 @@
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
 
                 window.addEventListener('resize', onWindowResize, false);
+
+
+                renderer.domElement.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    var mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                    var mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+                    var vector = new THREE.Vector3(mouseX, mouseY, 0.5);
+                    projector.unprojectVector(vector, camera);
+                    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+                    var intersects = raycaster.intersectObjects(objects, true);
+                    if (intersects[0].point !== undefined)
+                        alert("mi hanno cliccato!");
+                }, false);
             }
 
             function onWindowResize() {
