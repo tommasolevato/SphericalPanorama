@@ -1,5 +1,4 @@
 <?php
-
 //TODO: validare la query
 $q = $_GET["q"];
 //TODO: fare un file di configurazione e prenderli da lì
@@ -10,10 +9,6 @@ if (mysqli_connect_errno($con)) {
 }
 
 $result = mysqli_query($con, "SELECT * FROM Panorama WHERE ID='" . $q . "'");
-
-
-//$row=  mysqli_fetch_array($result,MYSQLI_ASSOC);
-//echo $row["Panorama"];
 
 while ($row = mysqli_fetch_array($result)) {
     echo $row['Panorama'];
