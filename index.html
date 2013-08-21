@@ -49,10 +49,9 @@
                     lon = 0, onMouseDownLon = 0,
                     lat = 0, onMouseDownLat = 0,
                     phi = 0, theta = 0,
-                    
                     //senza latLimit "guardando" in basso si vede un buco nero
                     latLimit = -30,
-                    projector;
+                    projector, panoId = 1;
 
             init();
             animate();
@@ -67,7 +66,7 @@
 
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
-                getPanorama(1);
+                getPanorama(panoId);
                 var panoName = xmlhttp.responseText;
                 mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/' + panoName)}));
                 mesh.scale.x = -1;
@@ -188,10 +187,19 @@
 
                 if (bool === false && sub < 20) {
                     //TODO: prenderli dal database
-                    if (lat >= -10 && lat <= 10 && lon <= 290 && lon >= 280) {
+                    getNextPanorama(panoId);
+                    var panoArray = JSON.parse(xmlhttp.response);
+                    var found = false;
+                    while (panoArray.length > 0 && !found) {
+                        var candidate = panoArray.pop();
+                        found = isNextPano(candidate);
+                    }
+                    if (found) {
+                        panoId = candidate['ID'];
 
-                        var texture = THREE.ImageUtils.loadTexture('textures/pano2.jpg', '', function onLoad() {
-                            
+                        //FIXME: possibile memory leak
+                        var texture = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
+
                             mesh.material.map = texture;
                             fov = 70;
                             lat = -6;
@@ -234,6 +242,10 @@
             function mod(num, mod) {
                 var remain = num % mod;
                 return Math.floor(remain >= 0 ? remain : remain + mod);
+            }
+
+            function isNextPano(candidate) {
+                return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
             }
 
         </script>

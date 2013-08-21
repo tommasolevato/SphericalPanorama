@@ -1,6 +1,8 @@
 <?php
 
+//TODO: validare la query
 $q = $_GET["q"];
+//TODO: fare un file di configurazione e prenderli da lì
 $con = mysqli_connect("localhost", "root", "eddie?54", "Panorama");
 
 if (mysqli_connect_errno($con)) {
