@@ -37,14 +37,13 @@
         <script src="js/MTLLoader.js"></script>
         <script src="js/OBJMTLLoader.js"></script>
         <script src="js/ajaxMysql.js"></script>
+        <script src="http://code.jquery.com/jquery-2.0.3.js"></script>
 
         <script>
-
             var camera, scene, renderer, mesh;
             var objects = [];
-            var panoramas = [];
             var fov = 70,
-                    texture_placeholder,
+                    texture,
                     isUserInteracting = false,
                     onMouseDownMouseX = 0, onMouseDownMouseY = 0,
                     lon = 0, onMouseDownLon = 0,
@@ -54,6 +53,31 @@
                     latLimit = -30,
                     projector, panoId = 1,
                     minZoom = 70, maxZoom = 20;
+
+            var fadeEffect = function() {
+                return{
+                    init: function(id, flag, target) {
+                        this.elem = document.getElementById(id);
+                        clearInterval(this.elem.si);
+                        this.target = target ? target : flag ? 100 : 0;
+                        this.flag = flag || -1;
+                        this.alpha = this.elem.style.opacity ? parseFloat(this.elem.style.opacity) * 100 : 0;
+                        this.elem.si = setInterval(function() {
+                            fadeEffect.tween();
+                        }, 20);
+                    },
+                    tween: function() {
+                        if (this.alpha === this.target) {
+                            clearInterval(this.elem.si);
+                        } else {
+                            var value = Math.round(this.alpha + ((this.target - this.alpha) * .05)) + (1 * this.flag);
+                            this.elem.style.opacity = value / 100;
+                            this.elem.style.filter = 'alpha(opacity=' + value + ')';
+                            this.alpha = value;
+                        }
+                    }
+                };
+            }();
 
             init();
             animate();
@@ -70,8 +94,8 @@
                 projector = new THREE.Projector();
                 getPanorama(panoId);
                 var panoName = xmlhttp.responseText;
-                panoramas[panoName] = THREE.ImageUtils.loadTexture('textures/' + panoName);
-                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: panoramas[panoName]}));
+                texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
+                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
                 mesh.scale.x = -1;
                 scene.add(mesh);
 
@@ -120,6 +144,7 @@
                         //TODO: qui scelgo cosa fare con l'oggetto attuale in qualche modo
                         alert("mi hanno cliccato!");
                 }, false);
+                fadeEffect.init('container', 1);
             }
 
             function onWindowResize() {
@@ -196,26 +221,19 @@
                         found = isNextPano(candidate);
                     }
                     if (found) {
-                        //XXX: scritto così fa schifo
-                        panoId = candidate['ID'];
-                        if (panoramas[candidate['Panorama']] === undefined) {
-                            panoramas[candidate['Panorama']] = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
-                                mesh.material.map = panoramas[candidate['Panorama']];
+                        fadeEffect.init('container', 0, 50);
+                        setTimeout(function() {
+                            panoId = candidate['ID'];
+                            texture = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
+                                mesh.material.map = texture;
                                 fov = 70;
                                 lat = -6;
                                 lon = 50;
                                 camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
                                 render();
+                                fadeEffect.init('container', 1);
                             });
-                        }
-                        else {
-                            mesh.material.map = panoramas[candidate['Panorama']];
-                            fov = 70;
-                            lat = -6;
-                            lon = 50;
-                            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                            render();
-                        }
+                        }, 500);
                     }
                 }
             }
@@ -258,6 +276,8 @@
             function isNextPano(candidate) {
                 return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
             }
+
+
 
         </script>
 
