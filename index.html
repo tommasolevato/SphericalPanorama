@@ -42,6 +42,7 @@
         <script>
             var camera, scene, renderer, mesh;
             var objects = [];
+            var loader = new THREE.OBJMTLLoader();
             var fov = 70,
                     texture,
                     isUserInteracting = false,
@@ -102,7 +103,7 @@
                 var pointLight = new THREE.PointLight(0xFFFFFF);
                 scene.add(pointLight);
 
-                var loader = new THREE.OBJMTLLoader();
+
                 loader.addEventListener('load', function(event) {
                     //TODO: caricarli dal database
                     var object = event.content;
@@ -113,8 +114,8 @@
                     object.scale.z = 2;
                     scene.add(object);
                     objects.push(object);
-
                 });
+
 
                 loader.load('object/mobile.obj', 'object/mobile.mtl');
 
@@ -183,7 +184,8 @@
             }
 
             function onDocumentMouseWheel(event) {
-                var sub = fov - event.wheelDeltaY * 0.05;
+                //TODO: riscrivimi!
+                var sub = fov - Math.min(event.wheelDeltaY * 0.05, 10);
                 //TODO: trovare dei nomi che abbiano senso per maxZoom e minZoom
                 if (maxZoom <= sub && sub <= minZoom) {
 
@@ -191,17 +193,17 @@
 
                     if (event.wheelDeltaY) {
 
-                        fov -= event.wheelDeltaY * 0.05;
+                        fov -= Math.min(event.wheelDeltaY * 0.05, 10);
                         // Opera / Explorer 9
 
                     } else if (event.wheelDelta) {
 
-                        fov -= event.wheelDelta * 0.05;
+                        fov -= Math.min(event.wheelDelta * 0.05, 10);
                         // Firefox
 
                     } else if (event.detail) {
 
-                        fov += event.detail * 1.0;
+                        fov += Math.min(event.detail * 1.0, 10);
 
                     }
 
@@ -224,6 +226,10 @@
                         fadeEffect.init('container', 0, 50);
                         setTimeout(function() {
                             panoId = candidate['ID'];
+                            while (objects.length > 0) {
+                                var obj = objects.pop();
+                                scene.remove(obj);
+                            }
                             texture = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
                                 mesh.material.map = texture;
                                 fov = 70;
@@ -232,8 +238,27 @@
                                 camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
                                 render();
                                 fadeEffect.init('container', 1);
+
+                                var x = -10;
+                                var y = -3;
+
+                                loader.addEventListener('load', function(event) {
+                                    //TODO: caricarli dal database
+                                    var object = event.content;
+                                    object.position.z = x;
+                                    object.position.y = y;
+                                    object.scale.x = 2;
+                                    object.scale.y = 2;
+                                    object.scale.z = 2;
+                                    scene.add(object);
+                                    objects.push(object);
+                                });
+                                loader.load('object/mobile.obj', 'object/mobile.mtl');
+
                             });
                         }, 500);
+
+                        
                     }
                 }
             }
