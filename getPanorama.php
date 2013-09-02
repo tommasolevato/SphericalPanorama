@@ -2,8 +2,7 @@
 //TODO: validare la query
 $q = $_GET["q"];
 //TODO: fare un file di configurazione e prenderli da lì
-$con = mysqli_connect("localhost", "root", "eddie?54", "Panorama");
-
+$con=  mysqli_connect("localhost", "sphericalpanorama","", "my_sphericalpanorama");
 if (mysqli_connect_errno($con)) {
     echo "Fail";
 }
@@ -14,4 +13,4 @@ while ($row = mysqli_fetch_array($result)) {
     echo $row['Panorama'];
 }
 mysqli_close($con);
-?>
+?>

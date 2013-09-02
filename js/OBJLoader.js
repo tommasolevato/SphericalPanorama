@@ -1,180 +1,32 @@
 /**
- * Loads a Wavefront .obj file with materials
- *
  * @author mrdoob / http://mrdoob.com/
- * @author angelxuanchang
  */
 
-THREE.OBJMTLLoader = function () {};
+THREE.OBJLoader = function ( manager ) {
 
-THREE.OBJMTLLoader.prototype = {
+	this.manager = ( manager !== undefined ) ? manager : THREE.DefaultLoadingManager;
 
-	constructor: THREE.OBJMTLLoader,
+};
 
-	/**
-	 * Load a Wavefront OBJ file with materials (MTL file)
-	 *
-	 * Loading progress is indicated by the following events:
-	 *   "load" event (successful loading): type = 'load', content = THREE.Object3D
-	 *   "error" event (error loading): type = 'load', message
-	 *   "progress" event (progress loading): type = 'progress', loaded, total
-	 *
-	 * If the MTL file cannot be loaded, then a MeshLambertMaterial is used as a default
-	 * @param url - Location of OBJ file to load
-	 * @param mtlfileurl - MTL file to load (optional, if not specified, attempts to use MTL specified in OBJ file)
-	 * @param options - Options on how to interpret the material (see THREE.MTLLoader.MaterialCreator )
-	 */
+THREE.OBJLoader.prototype = {
 
-	load: function ( url, mtlfileurl, options ) {
+	constructor: THREE.OBJLoader,
+
+	load: function ( url, onLoad, onProgress, onError ) {
 
 		var scope = this;
-		var xhr = new XMLHttpRequest();
 
-		var mtlDone;           // Is the MTL done (true if no MTL, error loading MTL, or MTL actually loaded)
-		var obj3d;             // Loaded model (from obj file)
-		var materialsCreator;  // Material creator is created when MTL file is loaded
+		var loader = new THREE.XHRLoader( scope.manager );
+		loader.setCrossOrigin( this.crossOrigin );
+		loader.load( url, function ( text ) {
 
-		// Loader for MTL
+			onLoad( scope.parse( text ) );
 
-		var mtlLoader = new THREE.MTLLoader( url.substr( 0, url.lastIndexOf( "/" ) + 1 ), options );
-		mtlLoader.addEventListener( 'load', waitReady );
-		mtlLoader.addEventListener( 'error', waitReady );
+		} );
 
-		// Try to load mtlfile
-
-		if ( mtlfileurl ) {
-
-			mtlLoader.load( mtlfileurl );
-			mtlDone = false;
-
-		} else {
-
-			mtlDone = true;
-
-		}
-
-		function waitReady( event ) {
-
-			if ( event.type === 'load' ) {
-
-				if ( event.content instanceof THREE.MTLLoader.MaterialCreator ) {
-
-					// MTL file is loaded
-
-					mtlDone = true;
-					materialsCreator = event.content;
-					materialsCreator.preload();
-
-				} else {
-
-					// OBJ file is loaded
-
-					if ( event.target.status === 200 || event.target.status === 0 ) {
-
-						var objContent = event.target.responseText;
-
-						if ( mtlfileurl ) {
-
-							// Parse with passed in MTL file
-
-							obj3d = scope.parse( objContent );
-
-						} else {
-
-							// No passed in MTL file, look for mtlfile in obj file
-
-							obj3d = scope.parse( objContent, function( mtlfile ) {
-
-								mtlDone = false;
-								mtlLoader.load( mtlLoader.baseUrl + mtlfile );
-
-							} );
-
-						}
-
-					} else {
-
-						// Error loading OBJ file....
-
-						scope.dispatchEvent( {
-							type: 'error',
-							message: 'Couldn\'t load URL [' + url + ']',
-							response: event.target.responseText } );
-
-					}
-
-				}
-
-			} else if ( event.type === 'error' ) {
-
-				// MTL failed to load -- oh well, we will just not have material ...
-
-				mtlDone = true;
-
-			}
-
-			if ( mtlDone && obj3d ) {
-
-				// MTL file is loaded and OBJ file is loaded
-				// Apply materials to model
-
-				if ( materialsCreator ) {
-
-					obj3d.traverse( function( object ) {
-
-						if ( object instanceof THREE.Mesh ) {
-
-							if ( object.material.name ) {
-
-								var material = materialsCreator.create( object.material.name );
-								if ( material ) {
-
-									object.material = material;
-
-								}
-
-							}
-
-						}
-
-					} );
-
-				}
-
-				// Notify listeners
-                                var n = url.split("/");
-                                obj3d.name=n[(n.length) - 1];
-				scope.dispatchEvent( { type: 'load', content: obj3d } );
-			}
-
-		}
-
-		xhr.addEventListener( 'load', waitReady, false );
-
-		xhr.addEventListener( 'progress', function ( event ) {
-
-			scope.dispatchEvent( { type: 'progress', loaded: event.loaded, total: event.total } );
-
-		}, false );
-
-		xhr.addEventListener( 'error', function () {
-
-			scope.dispatchEvent( { type: 'error', message: 'Couldn\'t load URL [' + url + ']' } );
-
-		}, false );
-
-		xhr.open( 'GET', url, true );
-		xhr.send( null );
 	},
 
-	/**
-	 * Parses loaded .obj file
-	 * @param data - content of .obj file
-	 * @param mtllibCallback - callback to handle mtllib declaration (optional)
-	 * @return {THREE.Object3D} - Object3D (with default material)
-	 */
-
-	parse: function ( data, mtllibCallback ) {
+	parse: function ( data ) {
 
 		// fixes
 
@@ -284,8 +136,6 @@ THREE.OBJMTLLoader.prototype = {
 
 			var line = lines[ i ];
 			line = line.trim();
-
-			// temporary variable storing pattern matching result
 
 			var result;
 
@@ -538,33 +388,23 @@ THREE.OBJMTLLoader.prototype = {
 
 				// mtl file
 
-				if ( mtllibCallback ) {
-
-					var mtlfile = line.substring( 7 );
-					mtlfile = mtlfile.trim();
-					mtllibCallback( mtlfile );
-
-				}
-
 			} else if ( /^s /.test( line ) ) {
 
-				// Smooth shading
+				// smooth shading
 
 			} else {
 
-				console.log( "THREE.OBJMTLLoader: Unhandled line " + line );
+				// console.log( "THREE.OBJLoader: Unhandled line " + line );
 
 			}
 
 		}
 
-		//Add last object
-		meshN(undefined, undefined);
+		// add the last group
+		meshN( undefined, undefined );
 
 		return group;
 
 	}
 
 };
-
-THREE.EventDispatcher.prototype.apply( THREE.OBJMTLLoader.prototype );

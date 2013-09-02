@@ -8,9 +8,10 @@ if (mysqli_connect_errno($con)) {
     echo "Fail";
 }
 
-$result = mysqli_query($con, "SELECT * FROM Panorama
-                              JOIN Collegamento ON Panorama.ID = Collegamento.IdCalled
-                              WHERE IdCalling='" . $q . "'");
+$result = mysqli_query($con, "SELECT TestoPerOggetto.*, Testo.Text FROM Testo
+                              JOIN TestoPerOggetto ON Testo.ID = TestoPerOggetto.IdText
+                              JOIN Oggetto ON Oggetto.ID=TestoPerOggetto.IdObject
+                              WHERE Oggetto.Object='" . $q . "'");
 
 $all = array();
 while ($row = mysqli_fetch_assoc($result)) {

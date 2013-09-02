@@ -25,6 +25,59 @@
             a {
                 color: #ffffff;
             }
+            
+            .popup{
+                position:absolute;
+                bottom:20%;
+                left:20%;
+                width:60%;
+                height:60%;
+                font-family:verdana;
+                font-size:13px;
+                background-color:rgb(240,240,240);
+                border:3px solid grey;
+            }
+
+            .descriptiveImage img{
+                position:relative;
+                float: left;
+                width: 35%;
+                height: 55%;
+                padding: 10px 0 0 10px;
+            }
+
+            .cancel{
+                position:absolute;
+                cursor:pointer;
+                top:0px;
+                right: 0px;
+                height:15px;
+                width:15px;
+            }
+            
+            .cancel img{
+                width: 15px;
+                height: 15px;
+            }
+            
+            span{
+                position: relative;
+                width: 90%;
+                float: left;
+                padding:10px 0 0 10px;
+            }
+
+            .logoImg img{
+                position: absolute;
+                bottom:0px;
+                right: 0px;
+                height: 45px;
+                width: 45px;
+            }
+
+            .cancel:hover{
+                /*background:rgb(255,50,50);*/
+            }
         </style>
     </head>
     <body>
@@ -32,16 +85,17 @@
         <div id="container"></div>
         <div id="info"><a href="http://threejs.org" target="_blank">three.js webgl</a> - Sphanorama by Leonardo Galli & Tommaso Levato.</div>
 
-        <script src="js/three.min.js"></script>
-        <script src="js/OBJLoader.js"></script>
-        <script src="js/MTLLoader.js"></script>
-        <script src="js/OBJMTLLoader.js"></script>
-        <script src="js/ajaxMysql.js"></script>
-        <script src="http://code.jquery.com/jquery-2.0.3.js"></script>
+        <script type="text/javascript" src="js/three.min.js"></script>
+        <script type="text/javascript" src="js/OBJLoader.js"></script>
+        <script type="text/javascript" src="js/MTLLoader.js"></script>
+        <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
+        <script type="text/javascript" src="js/ajaxMysql.js"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 
         <script>
             var camera, scene, renderer, mesh;
             var objects = [];
+            var objectsPosition = [];
             var loader = new THREE.OBJMTLLoader();
             var fov = 70,
                     texture,
@@ -79,60 +133,55 @@
                     }
                 };
             }();
-
             init();
             animate();
 
 
 
             function init() {
+                fadeEffect.init('container', 1);
                 var container = document.getElementById('container');
-
+                loader.addEventListener('load', function(event) {
+                    var object = event.content;
+                    var k = 0;
+                    var found = false;
+                    var length = objectsPosition.length;
+                    var indice;
+                    while (k < length && !found) {
+                        if (objectsPosition[k]['name'] === object.name) {
+                            indice = k;
+                            found = true;
+                        }
+                        k++;
+                    }
+                    object.position.x = objectsPosition[indice]['x'];
+                    object.position.y = objectsPosition[indice]['y'];
+                    object.position.z = objectsPosition[indice]['z'];
+                    scene.add(object);
+                    objects.push(object);
+                }, false);
                 camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
                 camera.target = new THREE.Vector3(0, 0, 0);
-
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
                 getPanorama(panoId);
                 var panoName = xmlhttp.responseText;
+                getMedia();
                 texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
                 mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
                 mesh.scale.x = -1;
                 scene.add(mesh);
-
                 var pointLight = new THREE.PointLight(0xFFFFFF);
                 scene.add(pointLight);
-
-
-                loader.addEventListener('load', function(event) {
-                    //TODO: caricarli dal database
-                    var object = event.content;
-                    object.position.z = -10;
-                    object.position.y = -3;
-                    object.scale.x = 2;
-                    object.scale.y = 2;
-                    object.scale.z = 2;
-                    scene.add(object);
-                    objects.push(object);
-                });
-
-
-                loader.load('object/mobile.obj', 'object/mobile.mtl');
-
                 renderer = new THREE.WebGLRenderer();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-
                 container.appendChild(renderer.domElement);
-
                 document.addEventListener('mousedown', onDocumentMouseDown, false);
                 document.addEventListener('mousemove', onDocumentMouseMove, false);
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-
                 window.addEventListener('resize', onWindowResize, false);
-
-
                 renderer.domElement.addEventListener('click', function(event) {
                     event.preventDefault();
                     var mouseX = (event.clientX / window.innerWidth) * 2 - 1;
@@ -141,36 +190,31 @@
                     projector.unprojectVector(vector, camera);
                     var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
                     var intersects = raycaster.intersectObjects(objects, true);
-                    if (intersects[0] !== undefined)
-                        //TODO: qui scelgo cosa fare con l'oggetto attuale in qualche modo
-                        alert("mi hanno cliccato!");
+                    if (intersects[0] !== undefined) {
+                        var name = intersects[0].object.parent.name;
+                        popUp(name);
+                    }
                 }, false);
-                fadeEffect.init('container', 1);
             }
 
             function onWindowResize() {
-
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
-
                 renderer.setSize(window.innerWidth, window.innerHeight);
             }
 
             function onDocumentMouseDown(event) {
-
                 isUserInteracting = true;
-
                 onPointerDownPointerX = event.clientX;
                 onPointerDownPointerY = event.clientY;
-
                 onPointerDownLon = lon;
                 onPointerDownLat = lat;
             }
 
             function onDocumentMouseMove(event) {
-                //TODO
                 if (isUserInteracting) {
-
+                    console.log("Longitude: " + lon.toString());
+                    console.log("Latitude: " + lat.toString());
                     lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
                     var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
                     lat = Math.max(rawLat, latLimit);
@@ -178,43 +222,26 @@
             }
 
             function onDocumentMouseUp(event) {
-
                 isUserInteracting = false;
-
             }
 
             function onDocumentMouseWheel(event) {
-                //TODO: riscrivimi!
-                var sub = fov - Math.min(event.wheelDeltaY * 0.05, 10);
-                //TODO: trovare dei nomi che abbiano senso per maxZoom e minZoom
+                var sub = fov - Math.min((event.wheelDeltaY * 0.05), 2);
                 if (maxZoom <= sub && sub <= minZoom) {
-
                     // WebKit
-
                     if (event.wheelDeltaY) {
-
-                        fov -= Math.min(event.wheelDeltaY * 0.05, 10);
+                        fov -= Math.min((event.wheelDeltaY * 0.05), 2);
                         // Opera / Explorer 9
-
                     } else if (event.wheelDelta) {
-
-                        fov -= Math.min(event.wheelDelta * 0.05, 10);
+                        fov -= Math.min((event.wheelDelta * 0.05), 2);
                         // Firefox
-
                     } else if (event.detail) {
-
-                        fov += Math.min(event.detail * 1.0, 10);
-
+                        fov += Math.min((event.detail * 1.0), 2);
                     }
-
                     camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
                     render();
-
                 }
                 if (sub < maxZoom) {
-                    //i log servono per settare la longitude e latitudine da caricare
-                    console.log("Longitude: " + lon.toString());
-                    console.log("Latitude: " + lat.toString());
                     getNextPanorama(panoId);
                     var panoArray = JSON.parse(xmlhttp.response);
                     var found = false;
@@ -223,68 +250,43 @@
                         found = isNextPano(candidate);
                     }
                     if (found) {
-                        fadeEffect.init('container', 0, 50);
+                        panoId = candidate['ID'];
+                        fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
-                            panoId = candidate['ID'];
-                            while (objects.length > 0) {
-                                var obj = objects.pop();
-                                scene.remove(obj);
-                            }
                             texture = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
-                                mesh.material.map = texture;
                                 fov = 70;
-                                lat = -6;
-                                lon = 50;
+                                mesh.material.map = texture;
                                 camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                                lat = parseFloat(candidate['LatitudeOnLoad']);
+                                lon = parseFloat(candidate['LongitudeOnLoad']);
                                 render();
                                 fadeEffect.init('container', 1);
-
-                                var x = -10;
-                                var y = -3;
-
-                                loader.addEventListener('load', function(event) {
-                                    //TODO: caricarli dal database
-                                    var object = event.content;
-                                    object.position.z = x;
-                                    object.position.y = y;
-                                    object.scale.x = 2;
-                                    object.scale.y = 2;
-                                    object.scale.z = 2;
-                                    scene.add(object);
-                                    objects.push(object);
-                                });
-                                loader.load('object/mobile.obj', 'object/mobile.mtl');
-
                             });
                         }, 500);
-
-                        
+                        while (objects.length > 0) {
+                            var obj = objects.pop();
+                            scene.remove(obj);
+                        }
+                        getMedia();
                     }
                 }
             }
 
             function animate() {
-
                 requestAnimationFrame(animate);
                 render();
-
             }
 
             function render() {
-
                 lat = Math.max(-85, Math.min(85, lat));
                 phi = THREE.Math.degToRad(90 - lat);
                 theta = THREE.Math.degToRad(lon);
-
                 camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
                 camera.target.y = 500 * Math.cos(phi);
                 camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
-
                 camera.lookAt(camera.target);
-
                 renderer.render(scene, camera);
             }
-
 
             function mod(num, mod) {
                 var remain = num % mod;
@@ -295,10 +297,71 @@
                 return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
             }
 
+            function popUp(objectName) {
+                if (document.body.lastChild.id !== 'html_popup') {
+                    fadeEffect.init('container', 0, 40);
+                    getText(objectName);
+                    var textArray = JSON.parse(xmlhttp.response);
+                    getImage(objectName);
+                    var imageArray = JSON.parse(xmlhttp.response);
+                    if (textArray.length !== 0) {
+                        var popup = document.createElement('div');
+                        popup.className = 'popup';
+                        popup.id = 'html_popup';
+                        var image = document.createElement('div');
+                        image.className = 'descriptiveImage';
+                        var imagename = imageArray.pop()['Image'].toString();
+                        image.id = imagename;
+                        var imageCall = '<img src=' + 'image/' + imagename + ' >';
+                        image.innerHTML = imageCall;
+                        var cancel = document.createElement('div');
+                        cancel.className = 'cancel';
+                        cancel.innerHTML = '<img src="image/button-close.png" >';
+                        cancel.onclick = function() {
+                            popup.parentNode.removeChild(popup);
+                            fadeEffect.init('container', 1);
+                        };
+                        var message = document.createElement('span');
+                        var textPath = textArray.pop()['Text'].toString();
+                        var client = new XMLHttpRequest();
+                        client.open('GET', 'text/' + textPath);
+                        client.onreadystatechange = function() {
+                            message.innerHTML = client.responseText;
+                        };
+                        var logo = document.createElement('div');
+                        logo.className = 'logoImg';
+                        logo.innerHTML = '<img src="image/micc_logo.jpg" >';
+                        client.send(null);
+                        popup.appendChild(message);
+                        popup.appendChild(cancel);
+                        popup.appendChild(image);
+                        popup.appendChild(logo);
+                        document.body.appendChild(popup);
+                    }
+                }
+            }
 
-
+            function getMedia() {
+                objectsPosition = [];
+                getObject(panoId);
+                var objectArray = JSON.parse(xmlhttp.response);
+                var len = objectArray.length;
+                var j = 0;
+                while (j < len) {
+                    var associatePosition = {'name': objectArray[j]['Object'],
+                        'x': objectArray[j]['xPosition'],
+                        'y': objectArray[j]['yPosition'],
+                        'z': objectArray[j]['zPosition']
+                    };
+                    objectsPosition.push(associatePosition);
+                    j++;
+                }
+                while (objectArray.length > 0) {
+                    var candidate = objectArray.pop();
+                    loader.load('object/' + candidate['Object']);
+                }
+            }
         </script>
-
 
     </body>
 </html>
