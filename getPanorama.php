@@ -1,8 +1,9 @@
 <?php
 //TODO: validare la query
 $q = $_GET["q"];
-//TODO: fare un file di configurazione e prenderli da lì
-$con=  mysqli_connect("localhost", "sphericalpanorama","", "my_sphericalpanorama");
+$db_properties = parse_ini_file('config/php.ini');
+$con= mysqli_connect($db_properties['host'], $db_properties['user'], $db_properties['password'], $db_properties['db_name']);
+
 if (mysqli_connect_errno($con)) {
     echo "Fail";
 }
@@ -13,4 +14,4 @@ while ($row = mysqli_fetch_array($result)) {
     echo $row['Panorama'];
 }
 mysqli_close($con);
-?>
+?>
