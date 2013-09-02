@@ -61,8 +61,6 @@
             init();
             animate();
 
-
-
             function init() {
                 fadeEffect.init('container', 1);
                 var container = document.getElementById('container');
@@ -89,7 +87,7 @@
                 camera.target = new THREE.Vector3(0, 0, 0);
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
-                getPanorama(panoId);
+                getContent(panoId, "getPanorama");
                 var panoName = xmlhttp.responseText;
                 getMedia();
                 texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
@@ -167,7 +165,7 @@
                     render();
                 }
                 if (sub < maxZoom) {
-                    getNextPanorama(panoId);
+                    getContent(panoId, "getNextPanorama");
                     var panoArray = JSON.parse(xmlhttp.response);
                     var found = false;
                     while (panoArray.length > 0 && !found) {
@@ -225,9 +223,9 @@
             function popUp(objectName) {
                 if (document.body.lastChild.id !== 'html_popup') {
                     fadeEffect.init('container', 0, 40);
-                    getText(objectName);
+                    getContent(objectName, "getText");
                     var textArray = JSON.parse(xmlhttp.response);
-                    getImage(objectName);
+                    getContent(objectName, "getImage");
                     var imageArray = JSON.parse(xmlhttp.response);
                     if (textArray.length !== 0) {
                         var popup = document.createElement('div');
@@ -268,7 +266,7 @@
 
             function getMedia() {
                 objectsPosition = [];
-                getObject(panoId);
+                getContent(panoId, "getObject");
                 var objectArray = JSON.parse(xmlhttp.response);
                 var len = objectArray.length;
                 var j = 0;
