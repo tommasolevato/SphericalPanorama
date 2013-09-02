@@ -312,11 +312,11 @@
                         image.className = 'descriptiveImage';
                         var imagename = imageArray.pop()['Image'].toString();
                         image.id = imagename;
-                        var imageCall = '<img src=' + 'image/' + imagename + ' >';
+                        var imageCall = '<img src=' + 'images/' + imagename + ' >';
                         image.innerHTML = imageCall;
                         var cancel = document.createElement('div');
                         cancel.className = 'cancel';
-                        cancel.innerHTML = '<img src="image/button-close.png" >';
+                        cancel.innerHTML = '<img src="images/button-close.png" >';
                         cancel.onclick = function() {
                             popup.parentNode.removeChild(popup);
                             fadeEffect.init('container', 1);
@@ -324,13 +324,13 @@
                         var message = document.createElement('span');
                         var textPath = textArray.pop()['Text'].toString();
                         var client = new XMLHttpRequest();
-                        client.open('GET', 'text/' + textPath);
+                        client.open('GET', 'texts/' + textPath);
                         client.onreadystatechange = function() {
                             message.innerHTML = client.responseText;
                         };
                         var logo = document.createElement('div');
                         logo.className = 'logoImg';
-                        logo.innerHTML = '<img src="image/micc_logo.jpg" >';
+                        logo.innerHTML = '<img src="images/micc_logo.jpg" >';
                         client.send(null);
                         popup.appendChild(message);
                         popup.appendChild(cancel);
@@ -358,7 +358,7 @@
                 }
                 while (objectArray.length > 0) {
                     var candidate = objectArray.pop();
-                    loader.load('object/' + candidate['Object']);
+                    loader.load('objects/' + candidate['Object']);
                 }
             }
         </script>
