@@ -194,7 +194,7 @@
                     camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
                     render();
                 }
-                if (maxZoom - 1 < fov && fov < maxZoom + 1) {
+                else {
                     var found = getNewPanorama();
                     if (!found) {
                         fov = 70;
