@@ -22,6 +22,7 @@
             var camera, scene, renderer, mesh;
             var objects = [];
             var objectsPosition = [];
+            var textures = [];
             var loader = new THREE.OBJMTLLoader();
             var fov = 70,
                     texture,
@@ -33,8 +34,10 @@
                     latLimit = -30,
                     projector, panoId = 1,
                     minZoom = 70, maxZoom = 20,
-                    interactiveObject, onMouseDownObjectYRotation;
-                    
+                    interactiveObject,
+                    onMouseDownObjectYRotation,
+                    onMouseDownObjectZRotation;
+
             var fadeEffect = function() {
                 return{
                     init: function(id, flag, target) {
@@ -107,6 +110,7 @@
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
                 document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
+                preload(panoId);
             }
 
             function onWindowResize() {
@@ -130,10 +134,11 @@
                 var intersects = raycaster.intersectObjects(objects, true);
                 if (intersects[0] !== undefined) {
                     interactiveObject = intersects[0].object.parent;
-                    onMouseDownObjectYRotation=interactiveObject.rotation.y;
-                }                
+                    onMouseDownObjectYRotation = interactiveObject.rotation.y;
+                    onMouseDownObjectZRotation = interactiveObject.rotation.z;     // MODIFICA
+                }
             }
-            
+
             function onDocumentMouseMove(event) {
                 if (isUserInteracting && interactiveObject === undefined) {
                     console.log("Longitude: " + lon.toString());
@@ -143,14 +148,16 @@
                     lat = Math.max(rawLat, latLimit);
                 }
                 if (interactiveObject !== undefined) {
-                    interactiveObject.rotation.y = (event.clientX - onPointerDownPointerX) * 0.01+onMouseDownObjectYRotation;
+                    interactiveObject.rotation.y = (event.clientX - onPointerDownPointerX) * 0.01 + onMouseDownObjectYRotation;
+                    interactiveObject.rotation.z = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectZRotation;
                 }
             }
 
             function onDocumentMouseUp(event) {
                 isUserInteracting = false;
                 if (interactiveObject !== undefined) {
-                    if(interactiveObject.rotation.y===onMouseDownObjectYRotation){
+                    if (interactiveObject.rotation.y === onMouseDownObjectYRotation &&
+                            interactiveObject.rotation.z === onMouseDownObjectZRotation) {
                         popUp(interactiveObject.name);
                     }
                 }
@@ -177,7 +184,7 @@
                     getNewPanorama();
                 }
             }
-            
+
             function onDocumentDoubleclick(event) {
                 event.preventDefault();
                 var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
@@ -286,7 +293,7 @@
                     loader.load('objects/' + candidate['Object']);
                 }
             }
-            
+
             function getNewPanorama() {
                 getContent(panoId, "getNextPanorama");
                 var panoArray = JSON.parse(xmlhttp.response);
@@ -296,28 +303,50 @@
                     found = isNextPano(candidate);
                 }
                 if (found) {
-                    panoId = candidate['ID'];
-                    fadeEffect.init('container', 0, 40);
-                    setTimeout(function() {
-                        texture = THREE.ImageUtils.loadTexture('textures/' + candidate['Panorama'], '', function onLoad() {
-                            fov = 70;
-                            mesh.material.map = texture;
-                            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                            lat = parseFloat(candidate['LatitudeOnLoad']);
-                            lon = parseFloat(candidate['LongitudeOnLoad']);
-                            render();
-                            fadeEffect.init('container', 1);
-                        });
-                    }, 500);
-                    while (objects.length > 0) {
-                        var obj = objects.pop();
-                        scene.remove(obj);
-                    }
-                    getMedia();
+                    load(candidate);
                 }
                 return found;
             }
-            
+
+            function load(panorama) {
+                panoId = panorama['ID'];
+                fadeEffect.init('container', 0, 40);
+                setTimeout(function() {
+                    texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
+                        fov = 70;
+                        mesh.material.map = texture;
+                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                        lat = parseFloat(panorama['LatitudeOnLoad']);
+                        lon = parseFloat(panorama['LongitudeOnLoad']);
+                        render();
+                        fadeEffect.init('container', 1);
+                    });
+                }, 600);
+                preload(panoId);
+                while (objects.length > 0) {
+                    var obj = objects.pop();
+                    scene.remove(obj);
+                }
+                getMedia();
+
+            }
+
+            function preload(panoId) {
+                getContent(panoId, "getNextPanorama");
+                var panoArray = JSON.parse(xmlhttp.response);
+                for (var i = 0; i < panoArray.length; i++) {
+                    var panorama = panoArray[i];
+                    var image = new Image();
+                    image.src = "textures/" + panorama['Panorama'];
+                    getContent(panorama['ID'], "getObject");
+                    var objectArray = JSON.parse(xmlhttp.response);
+                    while (objectArray.length > 0) {
+                        var candidate = objectArray.pop();
+                        jQuery.get("objects/" + candidate['Object'], '');
+                    }
+                }
+            }
+
         </script>
 
     </body>
