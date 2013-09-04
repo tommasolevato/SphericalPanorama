@@ -110,7 +110,9 @@
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
                 document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
-                preload(panoId);
+                setTimeout(function() {
+                    preload(panoId);
+                }, 2000);
             }
 
             function onWindowResize() {
@@ -274,6 +276,10 @@
             }
 
             function getMedia() {
+                while (objects.length > 0) {
+                    var obj = objects.pop();
+                    scene.remove(obj);
+                }
                 objectsPosition = [];
                 getContent(panoId, "getObject");
                 var objectArray = JSON.parse(xmlhttp.response);
@@ -322,13 +328,8 @@
                         fadeEffect.init('container', 1);
                     });
                 }, 700);
-                preload(panoId);
-                while (objects.length > 0) {
-                    var obj = objects.pop();
-                    scene.remove(obj);
-                }
                 getMedia();
-
+                preload(panoId);
             }
 
             function preload(panoId) {
