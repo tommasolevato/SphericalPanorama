@@ -326,7 +326,6 @@
                     found = isNextPano(candidate);
                 }
                 if (found) {
-                    console.log(candidate);
                     load(candidate);
                 }
                 return found;
@@ -350,7 +349,7 @@
                         });
                         getMedia();
                         preload(panoId);
-                    }, 700);
+                    }, 500);
                 }
             }
 
