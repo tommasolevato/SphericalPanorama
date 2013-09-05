@@ -35,8 +35,10 @@
                     projector, panoId = 1,
                     minZoom = 70, maxZoom = 20,
                     interactiveObject,
+                    onMouseDownObjectXRotation,
                     onMouseDownObjectYRotation,
-                    onMouseDownObjectZRotation;
+                    onMouseDownObjectZRotation,
+                    isRightClick = false;
 
             var fadeEffect = function() {
                 return{
@@ -103,6 +105,7 @@
                 renderer = new THREE.WebGLRenderer();
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 container.appendChild(renderer.domElement);
+                document.addEventListener('contextmenu', onDocumentRightClick, false);
                 document.addEventListener('mousedown', onDocumentMouseDown, false);
                 document.addEventListener('mousemove', onDocumentMouseMove, false);
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
@@ -123,6 +126,9 @@
 
             function onDocumentMouseDown(event) {
                 event.preventDefault();
+                if(event.which === 3) {
+                    isRightClick = true;
+                }
                 isUserInteracting = true;
                 onPointerDownPointerX = event.clientX;
                 onPointerDownPointerY = event.clientY;
@@ -136,8 +142,9 @@
                 var intersects = raycaster.intersectObjects(objects, true);
                 if (intersects[0] !== undefined) {
                     interactiveObject = intersects[0].object.parent;
+                    onMouseDownObjectXRotation = interactiveObject.rotation.x;
                     onMouseDownObjectYRotation = interactiveObject.rotation.y;
-                    onMouseDownObjectZRotation = interactiveObject.rotation.z;     // MODIFICA
+                    onMouseDownObjectZRotation = interactiveObject.rotation.z;
                 }
             }
 
@@ -149,17 +156,22 @@
                     var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
                     lat = Math.max(rawLat, latLimit);
                 }
-                if (interactiveObject !== undefined) {
+                if (interactiveObject !== undefined && !isRightClick) {
                     interactiveObject.rotation.y = (event.clientX - onPointerDownPointerX) * 0.01 + onMouseDownObjectYRotation;
                     interactiveObject.rotation.z = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectZRotation;
+                }
+                if (interactiveObject !== undefined && isRightClick) {
+                    interactiveObject.rotation.x = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectXRotation;
                 }
             }
 
             function onDocumentMouseUp(event) {
+                isRightClick = false;
                 isUserInteracting = false;
                 if (interactiveObject !== undefined) {
                     if (interactiveObject.rotation.y === onMouseDownObjectYRotation &&
-                            interactiveObject.rotation.z === onMouseDownObjectZRotation) {
+                            interactiveObject.rotation.z === onMouseDownObjectZRotation &&
+                            interactiveObject.rotation.x === onMouseDownObjectXRotation) {
                         popUp(interactiveObject.name);
                     }
                 }
@@ -204,6 +216,10 @@
                         render();
                     }
                 }
+            }
+
+            function onDocumentRightClick(event) {
+                event.preventDefault();
             }
 
             function animate() {
