@@ -38,7 +38,8 @@
                     onMouseDownObjectXRotation,
                     onMouseDownObjectYRotation,
                     onMouseDownObjectZRotation,
-                    isRightClick = false;
+                    isRightClick = false,
+                    amILoading = false;
 
             var fadeEffect = function() {
                 return{
@@ -126,7 +127,7 @@
 
             function onDocumentMouseDown(event) {
                 event.preventDefault();
-                if(event.which === 3) {
+                if (event.which === 3) {
                     isRightClick = true;
                 }
                 isUserInteracting = true;
@@ -325,27 +326,32 @@
                     found = isNextPano(candidate);
                 }
                 if (found) {
+                    console.log(candidate);
                     load(candidate);
                 }
                 return found;
             }
 
             function load(panorama) {
-                panoId = panorama['ID'];
-                fadeEffect.init('container', 0, 40);
-                setTimeout(function() {
-                    texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
-                        fov = 70;
-                        mesh.material.map = texture;
-                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                        lat = parseFloat(panorama['LatitudeOnLoad']);
-                        lon = parseFloat(panorama['LongitudeOnLoad']);
-                        render();
-                        fadeEffect.init('container', 1);
-                    });
-                }, 700);
-                getMedia();
-                preload(panoId);
+                if (!amILoading) {
+                    amILoading = true;
+                    panoId = panorama['ID'];
+                    fadeEffect.init('container', 0, 40);
+                    setTimeout(function() {
+                        texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
+                            mesh.material.map = texture;
+                            fov = 70;
+                            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                            lat = parseFloat(panorama['LatitudeOnLoad']);
+                            lon = parseFloat(panorama['LongitudeOnLoad']);
+                            render();
+                            fadeEffect.init('container', 1);
+                            amILoading = false;
+                        });
+                        getMedia();
+                        preload(panoId);
+                    }, 700);
+                }
             }
 
             function preload(panoId) {
