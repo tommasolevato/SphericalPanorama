@@ -11,7 +11,7 @@ if (mysqli_connect_errno($con)) {
 $result = mysqli_query($con, "SELECT * FROM Panorama WHERE ID='" . $q . "'");
 
 while ($row = mysqli_fetch_array($result)) {
-    echo $row['Panorama'];
+    return $row['Panorama'];
 }
 mysqli_close($con);
 ?>

@@ -17,6 +17,7 @@
         <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
         <script type="text/javascript" src="js/ajaxMysql.js"></script>
         <script type="text/javascript" src="js/jquery.min.js"></script>
+        <script type="text/javascript" src="js/eventListeners.js"></script>
 
         <script>
             var camera, scene, renderer, mesh;
@@ -94,8 +95,8 @@
                 camera.target = new THREE.Vector3(0, 0, 0);
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
-                getContent(panoId, "getPanorama");
-                var panoName = xmlhttp.responseText;
+
+                var panoName = getContent("panorama", panoId);
                 getMedia();
                 texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
                 mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
@@ -103,7 +104,7 @@
                 scene.add(mesh);
                 var pointLight = new THREE.PointLight(0xFFFFFF);
                 scene.add(pointLight);
-                renderer = new THREE.WebGLRenderer();
+                renderer = new THREE.WebGLRenderer({antialias: true});
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 container.appendChild(renderer.domElement);
                 document.addEventListener('contextmenu', onDocumentRightClick, false);
@@ -117,110 +118,6 @@
                 setTimeout(function() {
                     preload(panoId);
                 }, 2000);
-            }
-
-            function onWindowResize() {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            function onDocumentMouseDown(event) {
-                event.preventDefault();
-                if (event.which === 3) {
-                    isRightClick = true;
-                }
-                isUserInteracting = true;
-                onPointerDownPointerX = event.clientX;
-                onPointerDownPointerY = event.clientY;
-                onPointerDownLon = lon;
-                onPointerDownLat = lat;
-                var mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-                var mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-                var vector = new THREE.Vector3(mouseX, mouseY, 0.5);
-                projector.unprojectVector(vector, camera);
-                var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                var intersects = raycaster.intersectObjects(objects, true);
-                if (intersects[0] !== undefined) {
-                    interactiveObject = intersects[0].object.parent;
-                    onMouseDownObjectXRotation = interactiveObject.rotation.x;
-                    onMouseDownObjectYRotation = interactiveObject.rotation.y;
-                    onMouseDownObjectZRotation = interactiveObject.rotation.z;
-                }
-            }
-
-            function onDocumentMouseMove(event) {
-                if (isUserInteracting && interactiveObject === undefined) {
-                    console.log("Longitude: " + lon.toString());
-                    console.log("Latitude: " + lat.toString());
-                    lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
-                    var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
-                    lat = Math.max(rawLat, latLimit);
-                }
-                if (interactiveObject !== undefined && !isRightClick) {
-                    interactiveObject.rotation.y = (event.clientX - onPointerDownPointerX) * 0.01 + onMouseDownObjectYRotation;
-                    interactiveObject.rotation.z = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectZRotation;
-                }
-                if (interactiveObject !== undefined && isRightClick) {
-                    interactiveObject.rotation.x = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectXRotation;
-                }
-            }
-
-            function onDocumentMouseUp(event) {
-                isRightClick = false;
-                isUserInteracting = false;
-                if (interactiveObject !== undefined) {
-                    if (interactiveObject.rotation.y === onMouseDownObjectYRotation &&
-                            interactiveObject.rotation.z === onMouseDownObjectZRotation &&
-                            interactiveObject.rotation.x === onMouseDownObjectXRotation) {
-                        popUp(interactiveObject.name);
-                    }
-                }
-                interactiveObject = undefined;
-            }
-
-            function onDocumentMouseWheel(event) {
-                var sub = fov - Math.min((event.wheelDeltaY * 0.05), 2);
-                if (maxZoom <= sub && sub <= minZoom) {
-                    // WebKit
-                    if (event.wheelDeltaY) {
-                        fov -= Math.min((event.wheelDeltaY * 0.05), 2);
-                        // Opera / Explorer 9
-                    } else if (event.wheelDelta) {
-                        fov -= Math.min((event.wheelDelta * 0.05), 2);
-                        // Firefox
-                    } else if (event.detail) {
-                        fov += Math.min((event.detail * 1.0), 2);
-                    }
-                    camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                    render();
-                }
-                if (sub < maxZoom) {
-                    getNewPanorama();
-                }
-            }
-
-            function onDocumentDoubleclick(event) {
-                event.preventDefault();
-                var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
-                var newFov = fov - predefinedZoom;
-                if (maxZoom < newFov && newFov < minZoom) {
-                    fov -= predefinedZoom;
-                    camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                    render();
-                }
-                else {
-                    var found = getNewPanorama();
-                    if (!found) {
-                        fov = 70;
-                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                        render();
-                    }
-                }
-            }
-
-            function onDocumentRightClick(event) {
-                event.preventDefault();
             }
 
             function animate() {
@@ -251,10 +148,8 @@
             function popUp(objectName) {
                 if (document.body.lastChild.id !== 'html_popup') {
                     fadeEffect.init('container', 0, 40);
-                    getContent(objectName, "getText");
-                    var textArray = JSON.parse(xmlhttp.response);
-                    getContent(objectName, "getImage");
-                    var imageArray = JSON.parse(xmlhttp.response);
+                    var textArray = getContent("text", objectName);
+                    var imageArray = getContent("image", objectName);
                     if (textArray.length !== 0) {
                         var popup = document.createElement('div');
                         popup.className = 'popup';
@@ -298,8 +193,7 @@
                     scene.remove(obj);
                 }
                 objectsPosition = [];
-                getContent(panoId, "getObject");
-                var objectArray = JSON.parse(xmlhttp.response);
+                var objectArray = getContent("object", panoId);
                 var len = objectArray.length;
                 var j = 0;
                 while (j < len) {
@@ -318,8 +212,7 @@
             }
 
             function getNewPanorama() {
-                getContent(panoId, "getNextPanorama");
-                var panoArray = JSON.parse(xmlhttp.response);
+                var panoArray = getContent("nextPanoramas", panoId);
                 var found = false;
                 while (panoArray.length > 0 && !found) {
                     var candidate = panoArray.pop();
@@ -345,7 +238,9 @@
                             lon = parseFloat(panorama['LongitudeOnLoad']);
                             render();
                             fadeEffect.init('container', 1);
-                            amILoading = false;
+                            setTimeout(function() {
+                                amILoading = false;
+                            }, 500);
                         });
                         getMedia();
                         preload(panoId);
@@ -354,14 +249,12 @@
             }
 
             function preload(panoId) {
-                getContent(panoId, "getNextPanorama");
-                var panoArray = JSON.parse(xmlhttp.response);
+                var panoArray = getContent("nextPanoramas", panoId);
                 for (var i = 0; i < panoArray.length; i++) {
                     var panorama = panoArray[i];
                     var image = new Image();
                     image.src = "textures/" + panorama['Panorama'];
-                    getContent(panorama['ID'], "getObject");
-                    var objectArray = JSON.parse(xmlhttp.response);
+                    var objectArray = getContent("object", panorama['ID']);
                     while (objectArray.length > 0) {
                         var candidate = objectArray.pop();
                         jQuery.get("objects/" + candidate['Object'], '');
