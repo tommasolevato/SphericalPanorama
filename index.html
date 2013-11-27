@@ -339,6 +339,7 @@
 
                 function load(panorama) {
                     if (!amILoading) {
+                        cleanUpHotSpotContent();
                         amILoading = true;
                         panoId = panorama['ID'];
                         fadeEffect.init('container', 0, 40);
@@ -419,7 +420,7 @@
                                         var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
                                         var textMesh = new THREE.Mesh(textGeo, material);
                                         var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
-                                        var abbassamento = -i * 1 / menu.length + 0.07 * menu.length;
+                                        var abbassamento = -i * 2 / menu.length + 0.17 * menu.length;
                                         sphere.position.set(0.6, abbassamento, 0);
                                         relativePosition(parent, sphere);
                                         textMesh.position.set(0.8, abbassamento - 0.15, 0);
@@ -520,51 +521,56 @@
                 }
                 //HTML EMBEDDED
                 function portal(html, hotspotPosition) {
-                    while (objects.length > 0) {
-                        var object = objects.pop();
-                        scene.remove(object);
-                    }
+                    cleanUpHotSpotContent();
                     //setTimeout(function() {
-                        var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
-                        var planeWidth = 120;
-                        var planeHeight = 120;
-                        var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-                        planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-                        planeMesh.position.y += planeHeight / 2;
-                        // add it to the standard (WebGL) scene
-                        planeMesh.position.x = hotspotPosition.x + planeMesh.geometry.width / 2;
-                        planeMesh.position.y = hotspotPosition.y;
-                        planeMesh.position.z = 100;
-                        planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                    var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
+                    var planeWidth = 120;
+                    var planeHeight = 120;
+                    var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                    planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+                    planeMesh.position.y += planeHeight / 2;
+                    // add it to the standard (WebGL) scene
+                    planeMesh.position.x = hotspotPosition.x + planeMesh.geometry.width / 2;
+                    planeMesh.position.y = hotspotPosition.y;
+                    planeMesh.position.z = 100;
+                    planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
 
-                        objects.push(planeMesh);
-                        scene.add(planeMesh);
-                        //camera.position.set(0, 300, 400);
+                    objects.push(planeMesh);
+                    scene.add(planeMesh);
+                    //camera.position.set(0, 300, 400);
 
-                        // create the iframe to contain webpage
-                        
-                        // webpage to be loaded into iframe
-                        element.src = html;
-                        // width of iframe in pixels
-                        var elementWidth = 1024;
-                        // force iframe to have same relative dimensions as planeGeometry
-                        var aspectRatio = planeHeight / planeWidth;
-                        var elementHeight = elementWidth * aspectRatio;
-                        element.style.width = elementWidth + "px";
-                        element.style.height = elementHeight + "px";
+                    // create the iframe to contain webpage
 
-                        // create a CSS3DObject to display element
-                        var cssObject = new THREE.CSS3DObject(element);
-                        // synchronize cssObject position/rotation with planeMesh position/rotation 
-                        cssObject.position = planeMesh.position;
-                        cssObject.rotation = planeMesh.rotation;
-                        // resize cssObject to same size as planeMesh (plus a border)
-                        var percentBorder = 0.05;
-                        cssObject.scale.x /= (1 + percentBorder) * (elementWidth / planeWidth);
-                        cssObject.scale.y /= (1 + percentBorder) * (elementWidth / planeWidth);
-                        cssScene.add(cssObject);
+                    // webpage to be loaded into iframe
+                    element.src = html;
+                    // width of iframe in pixels
+                    var elementWidth = 1024;
+                    // force iframe to have same relative dimensions as planeGeometry
+                    var aspectRatio = planeHeight / planeWidth;
+                    var elementHeight = elementWidth * aspectRatio;
+                    element.style.width = elementWidth + "px";
+                    element.style.height = elementHeight + "px";
+
+                    // create a CSS3DObject to display element
+                    var cssObject = new THREE.CSS3DObject(element);
+                    // synchronize cssObject position/rotation with planeMesh position/rotation 
+                    cssObject.position = planeMesh.position;
+                    cssObject.rotation = planeMesh.rotation;
+                    // resize cssObject to same size as planeMesh (plus a border)
+                    var percentBorder = 0.05;
+                    cssObject.scale.x /= (1 + percentBorder) * (elementWidth / planeWidth);
+                    cssObject.scale.y /= (1 + percentBorder) * (elementWidth / planeWidth);
+                    cssScene.add(cssObject);
+                    objects.push(cssObject);
                     //}, 5000);
 
+                }
+
+                function cleanUpHotSpotContent() {
+                    while (objects.length > 0) {
+                        objectToRemove = objects.pop();
+                        scene.remove(objectToRemove);
+                    }
                 }
             </script>
         </div>
