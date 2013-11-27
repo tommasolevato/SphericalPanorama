@@ -19,6 +19,15 @@ function onDocumentMouseDown(event) {
         onMouseDownObjectXRotation = interactiveObject.rotation.x;
         onMouseDownObjectYRotation = interactiveObject.rotation.y;
         onMouseDownObjectZRotation = interactiveObject.rotation.z;
+        if (interactiveObject.name === "marker.obj") {
+            getMenu();
+        }
+    }
+    var intersects2 = raycaster.intersectObjects(InteractiveText, true);
+    if (intersects2[0] !== undefined) {
+        portal();
+        alert("CI Siamo! " + intersects2[0].object.geometry.name);
+
     }
 }
 
@@ -46,6 +55,7 @@ function onDocumentMouseMove(event) {
 }
 
 function onDocumentMouseUp(event) {
+    event.preventDefault();
     isRightClick = false;
     isUserInteracting = false;
     if (interactiveObject !== undefined) {
@@ -59,6 +69,14 @@ function onDocumentMouseUp(event) {
 }
 
 function onDocumentMouseWheel(event) {
+    event.preventDefault();
+    var number = element.style.width.split("px")[0];
+    console.log(event);
+    console.log(event.wheelDelta * 0.05);
+    number += (event.wheelDelta * 0.05);
+    console.log(number);
+//    element.style.width = (number-2) + "px";
+//    console.log(element.style.width);
     if (!amILoading) {
         var sub = fov - Math.min((event.wheelDeltaY * 0.05), 2);
         if (maxZoom <= sub && sub <= minZoom) {
@@ -76,6 +94,7 @@ function onDocumentMouseWheel(event) {
             render();
         }
         if (sub < maxZoom) {
+            console.log("Mi hai chiamato!");
             getNewPanorama();
         }
     }

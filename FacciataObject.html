@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>three.js webgl - Spherical Panorama by Leonardo Galli & Tommaso Levato</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                font-family: Monospace;
+                background-image: url("background.jpg"); 
+                margin: 0px;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div id="container"></div>
+        <div id="info">MICC - Media Integration and Communication Center</div>
+
+        <script type="text/javascript" src="js/three.min.js"></script>
+        <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
+        <script type="text/javascript" src="js/MTLLoader.js"></script>
+        <script type="text/javascript" src="js/ajaxMysql.js"></script>
+        <script type="text/javascript" src="js/jquery.min.js"></script>
+        <script type="text/javascript" src="js/eventListenersFacciata.js"></script>
+
+        <script>
+            //arrow helper?
+            var camera, scene, renderer, mesh;
+            var objects = [];
+            var loader = new THREE.OBJMTLLoader();
+            var fov = 70,
+                    plane,
+                    isUserInteracting = false,
+                    onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+                    lon = 0, onMouseDownLon = 0,
+                    lat = 0, onMouseDownLat = 0,
+                    phi = 0, theta = 0,
+                    latLimit = -30,
+                    projector,
+                    minZoom = 100, maxZoom = 20,
+                    interactiveObject,
+                    onMouseDownObjectXRotation,
+                    onMouseDownObjectYRotation,
+                    onMouseDownObjectZRotation,
+                    isRightClick = false;
+            var manager = new THREE.LoadingManager();
+            manager.onProgress = function(item, loaded, total) {
+                console.log(item, loaded, total);
+            };
+            init();
+            animate();
+            function init() {
+                loader.addEventListener('load', function(event) {
+                    var object = event.content;
+                    object.position.x = 10;
+                    object.position.y = 0;
+                    object.position.z = 0;
+                    object.rotation.y = -Math.PI / 2;
+                    var geometry = object.children[0].geometry;
+                    THREE.GeometryUtils.center(geometry);
+                    if (object.name === "Facciata.obj") {
+                        object.traverse(function(child) {
+                            if (child instanceof THREE.Mesh) {
+                                var texture = new THREE.Texture();
+                                var loader = new THREE.ImageLoader(manager);
+                                loader.load('images/Facciata.jpg', function(image) {
+                                    texture.image = image;
+                                    texture.needsUpdate = true;
+                                });
+                                child.material.map = texture;
+                                child.castShadow = true;//shadow
+                            }
+                        });
+                        object.castShadow=true;
+                    }
+                    scene.add(object);
+                    objects.push(object);
+                }, false);
+                camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                camera.target = new THREE.Vector3(0, 0, 0);
+                scene = new THREE.Scene();
+                projector = new THREE.Projector();
+
+                var geometry = new THREE.PlaneGeometry(200, 200);
+                geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+                var material = new THREE.MeshBasicMaterial({color: 0xe0e0e0});
+                plane = new THREE.Mesh(geometry, material);
+                plane.position.set(17, 0, 0);
+                plane.lookAt(new THREE.Vector3(0, 0, 0));
+                scene.add(plane);
+
+                loader.load('objects/Facciata.obj');
+
+                renderer = new THREE.WebGLRenderer({antialias: true});
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(renderer.domElement);
+                //shadow
+                var light = new THREE.DirectionalLight(0xffffff);
+                light.position.set(0, 0, 0);
+                light.target.position.set(10, 0, 0);
+                scene.add(light);
+                //renderer.shadowMapEnabled = true;
+                light.castShadow = true;
+                light.shadowDarkness = 1;
+                renderer.shadowMapSoft = true;
+                plane.receiveShadow = true;
+                //
+                document.addEventListener('contextmenu', onDocumentRightClick, false);
+                document.addEventListener('mousedown', onDocumentMouseDown, false);
+                document.addEventListener('mousemove', onDocumentMouseMove, false);
+                document.addEventListener('mouseup', onDocumentMouseUp, false);
+                document.addEventListener('mousewheel', onDocumentMouseWheel, false);
+                document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
+                document.addEventListener('dblclick', onDocumentDoubleclick, false);
+                window.addEventListener('resize', onWindowResize, false);
+
+
+            }
+            function animate() {
+                requestAnimationFrame(animate);
+                render();
+            }
+            function render() {
+                lat = Math.max(-85, Math.min(85, lat));
+                phi = THREE.Math.degToRad(90 - lat);
+                theta = THREE.Math.degToRad(lon);
+                camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                camera.target.y = 500 * Math.cos(phi);
+                camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+                camera.lookAt(camera.target);
+                renderer.render(scene, camera);
+            }
+            function mod(num, mod) {
+                var remain = num % mod;
+                return Math.floor(remain >= 0 ? remain : remain + mod);
+            }
+
+        </script>

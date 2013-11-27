@@ -27,8 +27,14 @@ class MySQLFetcher {
             case "image":
                 $this->contentFetcher = new ImageFetcher();
                 break;
+            case "menu":
+                $this->contentFetcher = new MenuFetcher();
+                break;
             case "nextPanoramas":
                 $this->contentFetcher = new NextPanoramasFetcher();
+                break;
+            case "nextZoom":
+                $this->contentFetcher = new NextZoomFetcher();
                 break;
             case "object":
                 $this->contentFetcher = new ObjectFetcher();

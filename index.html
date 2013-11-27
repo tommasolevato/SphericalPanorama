@@ -8,261 +8,512 @@
     </head>
     <body>
 
-        <div id="container"></div>
-        <div id="info"><a href="http://threejs.org" target="_blank">three.js webgl</a> - Spherical Panorama by Leonardo Galli & Tommaso Levato.</div>
 
-        <script type="text/javascript" src="js/three.min.js"></script>
-        <script type="text/javascript" src="js/OBJLoader.js"></script>
-        <script type="text/javascript" src="js/MTLLoader.js"></script>
-        <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
-        <script type="text/javascript" src="js/ajaxMysql.js"></script>
-        <script type="text/javascript" src="js/jquery.min.js"></script>
-        <script type="text/javascript" src="js/eventListeners.js"></script>
 
-        <script>
-            var camera, scene, renderer, mesh;
-            var objects = [];
-            var objectsPosition = [];
-            var textures = [];
-            var loader = new THREE.OBJMTLLoader();
-            var fov = 70,
-                    texture,
-                    isUserInteracting = false,
-                    onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-                    lon = 0, onMouseDownLon = 0,
-                    lat = 0, onMouseDownLat = 0,
-                    phi = 0, theta = 0,
-                    latLimit = -30,
-                    projector, panoId = 1,
-                    minZoom = 70, maxZoom = 20,
-                    interactiveObject,
-                    onMouseDownObjectXRotation,
-                    onMouseDownObjectYRotation,
-                    onMouseDownObjectZRotation,
-                    isRightClick = false,
-                    amILoading = false;
+        <div id="container">
+        </div>
+        <div id="info">MICC - Media Integration and Communication Center
 
-            var fadeEffect = function() {
-                return{
-                    init: function(id, flag, target) {
-                        this.elem = document.getElementById(id);
-                        clearInterval(this.elem.si);
-                        this.target = target ? target : flag ? 100 : 0;
-                        this.flag = flag || -1;
-                        this.alpha = this.elem.style.opacity ? parseFloat(this.elem.style.opacity) * 100 : 0;
-                        this.elem.si = setInterval(function() {
-                            fadeEffect.tween();
-                        }, 20);
-                    },
-                    tween: function() {
-                        if (this.alpha === this.target) {
+            <script type="text/javascript" src="js/Three58.js"></script>
+            <!--        <script type="text/javascript" src="js/three.min.js"></script>-->
+            <script type="text/javascript" src="js/OBJLoader.js"></script>
+            <script type="text/javascript" src="js/MTLLoader.js"></script>
+            <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
+            <script type="text/javascript" src="js/ajaxMysql.js"></script>
+            <script type="text/javascript" src="js/jquery.min.js"></script>
+            <script type="text/javascript" src="fonts/helvetiker_regular.typeface.js"></script>
+            <script type="text/javascript" src="js/eventListeners.js"></script>
+            <script type="text/javascript" src="js/CSS3DRenderer.js"></script>
+            <script type="text/javascript" src="js/THREEx.WindowResize.js"></script>
+
+            <script>
+                //arrow helper?
+                var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element;
+                var objects = [];
+                var objectsPosition = [];
+                var textures = [];
+                var ZoomArray = []; //Zoom Next
+                var InteractiveText = []; //Interactive click on Text
+                var loader = new THREE.OBJMTLLoader();
+                var fov = 70,
+                        texture,
+                        isUserInteracting = false,
+                        onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+                        lon = 0, onMouseDownLon = 0,
+                        lat = 0, onMouseDownLat = 0,
+                        phi = 0, theta = 0,
+                        latLimit = -30,
+                        projector, panoId = 1,
+                        minZoom = 70, maxZoom = 20,
+                        interactiveObject,
+                        onMouseDownObjectXRotation,
+                        onMouseDownObjectYRotation,
+                        onMouseDownObjectZRotation,
+                        canvas, context, intersectedObject, mouse = {x: 0, y: 0}, textTexture, sprite, time, // Text Over
+                        isRightClick = false,
+                        amILoading = false;
+
+                //Wrapper Texture (image Manager)
+                //            var manager = new THREE.LoadingManager();
+                //            manager.onProgress = function(item, loaded, total) {
+                //
+                //                console.log(item, loaded, total);
+                //            };
+
+
+                var fadeEffect = function() {
+                    return{
+                        init: function(id, flag, target) {
+                            this.elem = document.getElementById(id);
                             clearInterval(this.elem.si);
-                        } else {
-                            var value = Math.round(this.alpha + ((this.target - this.alpha) * .05)) + (1 * this.flag);
-                            this.elem.style.opacity = value / 100;
-                            this.elem.style.filter = 'alpha(opacity=' + value + ')';
-                            this.alpha = value;
+                            this.target = target ? target : flag ? 100 : 0;
+                            this.flag = flag || -1;
+                            this.alpha = this.elem.style.opacity ? parseFloat(this.elem.style.opacity) * 100 : 0;
+                            this.elem.si = setInterval(function() {
+                                fadeEffect.tween();
+                            }, 20);
+                        },
+                        tween: function() {
+                            if (this.alpha === this.target) {
+                                clearInterval(this.elem.si);
+                            } else {
+                                var value = Math.round(this.alpha + ((this.target - this.alpha) * .05)) + (1 * this.flag);
+                                this.elem.style.opacity = value / 100;
+                                this.elem.style.filter = 'alpha(opacity=' + value + ')';
+                                this.alpha = value;
+                            }
                         }
-                    }
-                };
-            }();
-            init();
-            animate();
-
-            function init() {
-                fadeEffect.init('container', 1);
-                var container = document.getElementById('container');
-                loader.addEventListener('load', function(event) {
-                    var object = event.content;
-                    var k = 0;
-                    var found = false;
-                    var length = objectsPosition.length;
-                    var indice;
-                    while (k < length && !found) {
-                        if (objectsPosition[k]['name'] === object.name) {
-                            indice = k;
-                            found = true;
-                        }
-                        k++;
-                    }
-                    object.position.x = objectsPosition[indice]['x'];
-                    object.position.y = objectsPosition[indice]['y'];
-                    object.position.z = objectsPosition[indice]['z'];
-                    scene.add(object);
-                    objects.push(object);
-                }, false);
-                camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                camera.target = new THREE.Vector3(0, 0, 0);
-                scene = new THREE.Scene();
-                projector = new THREE.Projector();
-
-                var panoName = getContent("panorama", panoId);
-                getMedia();
-                texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
-                mesh = new THREE.Mesh(new THREE.SphereGeometry(500, 60, 40), new THREE.MeshBasicMaterial({map: texture}));
-                mesh.scale.x = -1;
-                scene.add(mesh);
-                var pointLight = new THREE.PointLight(0xFFFFFF);
-                scene.add(pointLight);
-                renderer = new THREE.WebGLRenderer({antialias: true});
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                container.appendChild(renderer.domElement);
-                document.addEventListener('contextmenu', onDocumentRightClick, false);
-                document.addEventListener('mousedown', onDocumentMouseDown, false);
-                document.addEventListener('mousemove', onDocumentMouseMove, false);
-                document.addEventListener('mouseup', onDocumentMouseUp, false);
-                document.addEventListener('mousewheel', onDocumentMouseWheel, false);
-                document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                document.addEventListener('dblclick', onDocumentDoubleclick, false);
-                window.addEventListener('resize', onWindowResize, false);
-                setTimeout(function() {
-                    preload(panoId);
-                }, 2000);
-            }
-
-            function animate() {
-                requestAnimationFrame(animate);
-                render();
-            }
-
-            function render() {
-                lat = Math.max(-85, Math.min(85, lat));
-                phi = THREE.Math.degToRad(90 - lat);
-                theta = THREE.Math.degToRad(lon);
-                camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
-                camera.target.y = 500 * Math.cos(phi);
-                camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
-                camera.lookAt(camera.target);
-                renderer.render(scene, camera);
-            }
-
-            function mod(num, mod) {
-                var remain = num % mod;
-                return Math.floor(remain >= 0 ? remain : remain + mod);
-            }
-
-            function isNextPano(candidate) {
-                return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
-            }
-
-            function popUp(objectName) {
-                if (document.body.lastChild.id !== 'html_popup') {
-                    fadeEffect.init('container', 0, 40);
-                    var textArray = getContent("text", objectName);
-                    var imageArray = getContent("image", objectName);
-                    if (textArray.length !== 0) {
-                        var popup = document.createElement('div');
-                        popup.className = 'popup';
-                        popup.id = 'html_popup';
-                        var image = document.createElement('div');
-                        image.className = 'descriptiveImage';
-                        var imagename = imageArray.pop()['Image'].toString();
-                        image.id = imagename;
-                        var imageCall = '<img src=' + 'images/' + imagename + ' >';
-                        image.innerHTML = imageCall;
-                        var cancel = document.createElement('div');
-                        cancel.className = 'cancel';
-                        cancel.innerHTML = '<img src="images/button-close.png" >';
-                        cancel.onclick = function() {
-                            popup.parentNode.removeChild(popup);
-                            fadeEffect.init('container', 1);
-                        };
-                        var message = document.createElement('span');
-                        var textPath = textArray.pop()['Text'].toString();
-                        var client = new XMLHttpRequest();
-                        client.open('GET', 'texts/' + textPath);
-                        client.onreadystatechange = function() {
-                            message.innerHTML = client.responseText;
-                        };
-                        var logo = document.createElement('div');
-                        logo.className = 'logoImg';
-                        logo.innerHTML = '<img src="images/micc_logo.jpg" >';
-                        client.send(null);
-                        popup.appendChild(message);
-                        popup.appendChild(cancel);
-                        popup.appendChild(image);
-                        popup.appendChild(logo);
-                        document.body.appendChild(popup);
-                    }
-                }
-            }
-
-            function getMedia() {
-                while (objects.length > 0) {
-                    var obj = objects.pop();
-                    scene.remove(obj);
-                }
-                objectsPosition = [];
-                var objectArray = getContent("object", panoId);
-                var len = objectArray.length;
-                var j = 0;
-                while (j < len) {
-                    var associatePosition = {'name': objectArray[j]['Object'],
-                        'x': objectArray[j]['xPosition'],
-                        'y': objectArray[j]['yPosition'],
-                        'z': objectArray[j]['zPosition']
                     };
-                    objectsPosition.push(associatePosition);
-                    j++;
-                }
-                while (objectArray.length > 0) {
-                    var candidate = objectArray.pop();
-                    loader.load('objects/' + candidate['Object']);
-                }
-            }
+                }();
+                init();
+                setTimeout(function() {
+                    animate();
+                }, 1000);
 
-            function getNewPanorama() {
-                var panoArray = getContent("nextPanoramas", panoId);
-                var found = false;
-                while (panoArray.length > 0 && !found) {
-                    var candidate = panoArray.pop();
-                    found = isNextPano(candidate);
-                }
-                if (found) {
-                    load(candidate);
-                }
-                return found;
-            }
+                function init() {
+                    fadeEffect.init('container', 1);
+                    var container = document.getElementById('container');
+                    console.log(loader);
+                    //                loader.addEventListener('load', function(event) {
+                    //                    var object = event.content;
+                    //                    var k = 0;
+                    //                    var found = false;
+                    //                    var length = objectsPosition.length;
+                    //                    var indice;
+                    //                    while (k < length && !found) {
+                    //                        if (objectsPosition[k]['name'] === object.name) {
+                    //                            indice = k;
+                    //                            found = true;
+                    //                        }
+                    //                        k++;
+                    //                    }
+                    //                    object.position.x = objectsPosition[indice]['x'];
+                    //                    object.position.y = objectsPosition[indice]['y'];
+                    //                    object.position.z = objectsPosition[indice]['z'];
+                    //                    // Center Object Rotation
+                    //                    var geometry = object.children[0].geometry;
+                    //                    THREE.GeometryUtils.center(geometry);
+                    //                    //
+                    //                    //Wrapper Texture
+                    //                    if (object.name === "Facciata.obj") {
+                    //                        object.traverse(function(child) {
+                    //
+                    //                            if (child instanceof THREE.Mesh) {
+                    //                                var texture = new THREE.Texture();
+                    //                                var loader = new THREE.ImageLoader(manager);
+                    //                                loader.load('images/Facciata.jpg', function(image) {
+                    //                                    texture.image = image;
+                    //                                    texture.needsUpdate = true;
+                    //                                });
+                    //                                child.material.map = texture;
+                    //                            }
+                    //                        });
+                    //                    }
+                    //                    //
+                    //                    //Marker Rotation
+                    //                    if (object.name === "marker.obj") {
+                    //                        object.rotation.set(0, 1, 5.5);
+                    //                        object.scale.set(0.7, 0.7, 0.7);
+                    //                    }
+                    //                    //
+                    //                    scene.add(object);
+                    //                    objects.push(object);
+                    //                }, false);
+                    camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                    camera.target = new THREE.Vector3(0, 0, 0);
+                    scene = new THREE.Scene();
+                    projector = new THREE.Projector();
 
-            function load(panorama) {
-                if (!amILoading) {
-                    amILoading = true;
-                    panoId = panorama['ID'];
-                    fadeEffect.init('container', 0, 40);
+                    var panoName = getContent("panorama", panoId);
+                    //getMedia();
+                    texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
+                    var geometry = new THREE.SphereGeometry(500, 60, 40);
+                    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: texture}));
+                    mesh.scale.x = -1;
+                    scene.add(mesh);
+                    var pointLight = new THREE.PointLight(0xFFFFFF);
+                    scene.add(pointLight);
+                    //NextZoom
+
+                    ZoomArray = getContent("nextZoom", panoId);
+                    //
+                    // TEXT OVER
+                    //                canvas = document.createElement('canvas');
+                    //                context = canvas.getContext('2d');
+                    //                context.font = "Bold 20px Arial";
+                    //                //context.fillStyle = "rgba(0,0,0,0.95)";
+                    //                //context.fillText('Hello, world!', 0, 20);
+                    //                textTexture = new THREE.Texture(canvas);
+                    //                textTexture.needsUpdate = true;
+                    //                var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
+                    //                sprite = new THREE.Sprite(spriteMaterial);
+                    //                sprite.scale.set(200, 100, 1.0);
+                    //                scene.add(sprite);
+                    //
+                    renderer = new THREE.WebGLRenderer({antialias: true});
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    container.appendChild(renderer.domElement);
+                    document.addEventListener('contextmenu', onDocumentRightClick, false);
+                    document.addEventListener('mousedown', onDocumentMouseDown, false);
+                    document.addEventListener('mousemove', onDocumentMouseMove, false);
+                    document.addEventListener('mouseup', onDocumentMouseUp, false);
+                    document.addEventListener('mousewheel', onDocumentMouseWheel, false);
+                    document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
+                    document.addEventListener('dblclick', onDocumentDoubleclick, false);
+                    window.addEventListener('resize', onWindowResize, false);
                     setTimeout(function() {
-                        texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
-                            mesh.material.map = texture;
-                            fov = 70;
-                            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                            lat = parseFloat(panorama['LatitudeOnLoad']);
-                            lon = parseFloat(panorama['LongitudeOnLoad']);
-                            render();
-                            fadeEffect.init('container', 1);
-                            setTimeout(function() {
-                                amILoading = false;
-                            }, 500);
-                        });
-                        getMedia();
                         preload(panoId);
-                    }, 500);
-                }
-            }
+                    }, 2000);
 
-            function preload(panoId) {
-                var panoArray = getContent("nextPanoramas", panoId);
-                for (var i = 0; i < panoArray.length; i++) {
-                    var panorama = panoArray[i];
-                    var image = new Image();
-                    image.src = "textures/" + panorama['Panorama'];
-                    var objectArray = getContent("object", panorama['ID']);
+                    var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
+                    var planeWidth = 360;
+                    var planeHeight = 120;
+                    var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                    planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+                    planeMesh.position.y += planeHeight / 2;
+                    // add it to the standard (WebGL) scene
+                    planeMesh.position = new THREE.Vector3(80, 0, -200);
+                    planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                    scene.add(planeMesh);
+                    //camera.position.set(0, 300, 400);
+
+
+                    cssScene = new THREE.Scene();
+                    // create the iframe to contain webpage
+                    element = document.createElement('iframe');
+                    // webpage to be loaded into iframe
+                    element.src = "CAT_Formella04.pdf";
+                    // width of iframe in pixels
+                    var elementWidth = 1024;
+                    // force iframe to have same relative dimensions as planeGeometry
+                    var aspectRatio = planeHeight / planeWidth;
+                    var elementHeight = elementWidth * aspectRatio;
+                    element.style.width = elementWidth + "px";
+                    element.style.height = elementHeight + "px";
+
+                    // create a CSS3DObject to display element
+                    var cssObject = new THREE.CSS3DObject(element);
+                    // synchronize cssObject position/rotation with planeMesh position/rotation 
+                    cssObject.position = planeMesh.position;
+                    cssObject.rotation = planeMesh.rotation;
+                    // resize cssObject to same size as planeMesh (plus a border)
+                    var percentBorder = 0.05;
+                    cssObject.scale.x /= (1 + percentBorder) * (elementWidth / planeWidth);
+                    cssObject.scale.y /= (1 + percentBorder) * (elementWidth / planeWidth);
+                    cssScene.add(cssObject);
+
+                    //create a renderer for CSS
+                    rendererCSS = new THREE.CSS3DRenderer();
+                    rendererCSS.setSize(window.innerWidth, window.innerHeight);
+                    rendererCSS.domElement.style.position = 'absolute';
+                    rendererCSS.domElement.style.top = 0;
+                    rendererCSS.domElement.style.margin = 0;
+                    rendererCSS.domElement.style.padding = 0;
+                    container.appendChild(rendererCSS.domElement);
+                    // when window resizes, also resize this renderer
+                    THREEx.WindowResize(rendererCSS, camera);
+                    renderer.domElement.style.position = 'absolute';
+                    renderer.domElement.style.top = 0;
+                    // make sure original renderer appears on top of CSS renderer
+                    renderer.domElement.style.zIndex = 1;
+                    rendererCSS.domElement.appendChild(renderer.domElement);
+                    var circle = new THREE.Mesh(new THREE.CircleGeometry(), new THREE.MeshBasicMaterial());
+                    planeMesh.position = new THREE.Vector3(80, 0, -200);
+                    scene.add(circle);
+
+                }
+
+                function onWindowResize() {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    render();
+                    //TEXT OVER
+                    update();
+                    //
+                }
+
+                function render() {
+                    lat = Math.max(-85, Math.min(85, lat));
+                    phi = THREE.Math.degToRad(90 - lat);
+                    theta = THREE.Math.degToRad(lon);
+                    camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                    camera.target.y = 500 * Math.cos(phi);
+                    camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+                    camera.lookAt(camera.target);
+                    renderer.render(scene, camera);
+                    rendererCSS.render(cssScene, camera);
+                }
+
+                function mod(num, mod) {
+                    var remain = num % mod;
+                    return Math.floor(remain >= 0 ? remain : remain + mod);
+                }
+
+                function isNextPano(candidate) {
+                    return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
+                }
+
+                function whichTransitionDirection() {
+                    var i = 0;
+                    var found = false;
+                    while (i < ZoomArray.length && !found) {
+                        if (Math.abs(lat - ZoomArray[i]['Latitude']) < 20 && Math.abs(lon - ZoomArray[i]['Longitude']) < 20) {
+                            found = true;
+                            return i;
+                        }
+                        i++;
+                    }
+                }
+
+                function popUp(objectName) {
+                    if (document.body.lastChild.id !== 'html_popup') {
+
+                        var textArray = getContent("text", objectName);
+
+                        var imageArray = getContent("image", objectName);
+                        if (textArray.length !== 0) {
+                            fadeEffect.init('container', 0, 40);
+                            var popup = document.createElement('div');
+                            popup.className = 'popup';
+                            popup.id = 'html_popup';
+                            var image = document.createElement('div');
+                            image.className = 'descriptiveImage';
+                            var imagename = imageArray.pop()['Image'].toString();
+                            image.id = imagename;
+                            var imageCall = '<img src=' + 'images/' + imagename + ' >';
+                            image.innerHTML = imageCall;
+                            var cancel = document.createElement('div');
+                            cancel.className = 'cancel';
+                            cancel.innerHTML = '<img src="images/button-close.png" >';
+                            cancel.onclick = function() {
+                                popup.parentNode.removeChild(popup);
+                                fadeEffect.init('container', 1);
+                            };
+                            var message = document.createElement('span');
+                            var textPath = textArray.pop()['Text'].toString();
+                            var client = new XMLHttpRequest();
+                            client.open('GET', 'texts/' + textPath);
+                            client.onreadystatechange = function() {
+                                message.innerHTML = client.responseText;
+                            };
+                            var logo = document.createElement('div');
+                            logo.className = 'logoImg';
+                            logo.innerHTML = '<img src="images/micc_logo.jpg" >';
+                            client.send(null);
+                            popup.appendChild(message);
+                            popup.appendChild(cancel);
+                            popup.appendChild(image);
+                            popup.appendChild(logo);
+                            document.body.appendChild(popup);
+                        }
+                    }
+                }
+
+                function getMedia() {
+                    while (objects.length > 0) {
+                        var obj = objects.pop();
+                        scene.remove(obj);
+                    }
+                    objectsPosition = [];
+                    var objectArray = getContent("object", panoId);
+                    var len = objectArray.length;
+                    var j = 0;
+                    while (j < len) {
+                        var associatePosition = {'name': objectArray[j]['Object'],
+                            'x': objectArray[j]['xPosition'],
+                            'y': objectArray[j]['yPosition'],
+                            'z': objectArray[j]['zPosition']
+                        };
+                        objectsPosition.push(associatePosition);
+                        j++;
+                    }
                     while (objectArray.length > 0) {
                         var candidate = objectArray.pop();
-                        jQuery.get("objects/" + candidate['Object'], '');
+                        loader.load('objects/' + candidate['Object']);
+
                     }
                 }
-            }
 
-        </script>
+                function getNewPanorama() {
 
+                    var panoArray = getContent("nextPanoramas", panoId);
+                    var found = false;
+                    while (panoArray.length > 0 && !found) {
+                        var candidate = panoArray.pop();
+                        found = isNextPano(candidate);
+                    }
+                    if (found) {
+                        load(candidate);
+                    }
+                    return found;
+                }
+
+                function load(panorama) {
+                    if (!amILoading) {
+                        amILoading = true;
+                        panoId = panorama['ID'];
+                        fadeEffect.init('container', 0, 40);
+                        setTimeout(function() {
+                            texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
+                                mesh.material.map = texture;
+                                fov = 70;
+                                camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                                lat = parseFloat(panorama['LatitudeOnLoad']);
+                                lon = parseFloat(panorama['LongitudeOnLoad']);
+                                //NextZoom
+                                ZoomArray = getContent("nextZoom", panoId);
+                                //
+                                render();
+                                fadeEffect.init('container', 1);
+                                setTimeout(function() {
+                                    amILoading = false;
+                                }, 500);
+                            });
+                            //getMedia();
+                            preload(panoId);
+                        }, 500);
+                    }
+                }
+
+                function preload(panoId) {
+
+                    var panoArray = getContent("nextPanoramas", panoId);
+                    for (var i = 0; i < panoArray.length; i++) {
+                        var panorama = panoArray[i];
+                        var image = new Image();
+                        image.src = "textures/" + panorama['Panorama'];
+                        var objectArray = getContent("object", panorama['ID']);
+                        while (objectArray.length > 0) {
+                            var candidate = objectArray.pop();
+                            jQuery.get("objects/" + candidate['Object'], '');
+                        }
+                    }
+                }
+
+                //Interactive Hotspot
+                function getMenu() {
+                    var plane = new THREE.PlaneGeometry(2, 2);
+                    var planeMat = new THREE.MeshBasicMaterial({color: 0xffff00});
+                    var mesh = new THREE.Mesh(plane, planeMat);
+                    mesh.overdraw = true;
+                    mesh.position.x = interactiveObject.position.x - 1;
+                    mesh.position.y = interactiveObject.position.y - 1;
+                    mesh.position.z = interactiveObject.position.z;
+                    mesh.rotation.x = Math.PI;
+                    scene.add(mesh);
+
+                    var idHotspot = 1; //quest'Id va visto come recuperarlo, il nostro hotspot al memento è l'interactiveObject 
+
+                    var tempMenu = getContent("menu", idHotspot)[0].Menu;
+                    console.log(tempMenu);
+                    var menu = tempMenu.split("/");
+                    var i = 0;
+                    while (i < menu.length) {
+                        var textGeo = new THREE.TextGeometry("•" + menu[i], {
+                            size: 0.2,
+                            height: 0.04,
+                            curveSegments: 8,
+                            font: "helvetiker"
+                        });
+                        textGeo.name = menu[i];
+                        var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+                        var textMesh = new THREE.Mesh(textGeo, material);
+                        textMesh.position.x = interactiveObject.position.x - (1 / 7);
+                        textMesh.position.y = interactiveObject.position.y - (i * 1 / 3) - (1 / 3);
+                        textMesh.position.z = interactiveObject.position.z;
+                        textMesh.rotation.y = Math.PI;
+                        scene.add(textMesh);
+                        InteractiveText.push(textMesh);
+                        i++;
+                    }
+                }
+                //
+
+                //TEXT OVER
+                function update() {
+                    var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                    projector.unprojectVector(vector, camera);
+                    var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+                    var intersects = ray.intersectObjects(objects, true);
+                    var d = new Date();
+                    if (intersects.length > 0) {
+                        if (intersects[0] !== intersectedObject) {
+                            intersectedObject = intersects[0].object;
+                            //Menu sphere
+                            //if (scene.lastChild.name !== "sphere") {
+                            var i = 0;
+                            while (i < 2) {
+                                var sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 40, 60), new THREE.MeshBasicMaterial({color: 0x0000ff}));
+                                sphere.position.x = intersectedObject.position.x - (1 / 7);
+                                sphere.position.y = intersectedObject.position.y - (i * 1 / 3);
+                                sphere.position.x = intersectedObject.position.z;
+                                sphere.name = "phere";
+                                scene.add(sphere);
+                                i++;
+                            }
+                            //}
+                            //
+                            if (intersects[0].object.parent.name) {
+                                context.clearRect(0, 0, 640, 480);
+                                var message = intersects[0].object.parent.name;
+                                var metrics = context.measureText(message);
+                                var width = metrics.width;
+                                context.fillStyle = "rgba(0,0,0,0.95)"; // black border
+                                context.fillRect(0, 0, width + 8, 20 + 8);
+                                context.fillStyle = "rgba(255,255,255,0.95)"; // white filler
+                                context.fillRect(2, 2, width + 4, 20 + 4);
+                                context.fillStyle = "rgba(0,0,0,1)"; // text color
+                                context.fillText(message, 4, 20);
+                                textTexture.needsUpdate = true;
+                            }
+                        }
+                        time = d.getTime();
+                    }
+                    else {
+                        if (d.getTime() >= time + 2000) {
+                            intersectedObject = null;
+                            context.clearRect(0, 0, 300, 300);
+                            textTexture.needsUpdate = true;
+                        }
+                    }
+                }
+
+                //HTML EMBEDDED
+                function portal() {
+                    console.log("wei");
+                    var material = new THREE.MeshBasicMaterial();
+                    var geometry = new THREE.PlaneGeometry(11, 11);
+                    var mesh = new THREE.Mesh(geometry, material);
+                    mesh.position = objects[1].position;
+                    scene.add(mesh);
+                }
+            </script>
+        </div>
     </body>
 </html>
