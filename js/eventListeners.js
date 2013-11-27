@@ -23,11 +23,17 @@ function onDocumentMouseDown(event) {
             getMenu();
         }
     }
-    var intersects2 = raycaster.intersectObjects(InteractiveText, true);
+    var intersects2 = raycaster.intersectObjects(interactiveTexts, true);
+    if (intersects2.length === 0)
+        intersects2 = raycaster.intersectObjects(menuPoints, true);
     if (intersects2[0] !== undefined) {
-        portal();
-        alert("CI Siamo! " + intersects2[0].object.geometry.name);
-
+        
+        var information = intersects2[0].object.name.split(" ");
+        var hotspotArray = getContent("hotspotInfo",information[0]);
+        var hotspotPosition = intersects2[0].object.position;
+        var hotspotInfo = hotspotArray.pop()[information[1]];
+        
+        portal(hotspotInfo, hotspotPosition);
     }
 }
 
@@ -52,6 +58,9 @@ function onDocumentMouseMove(event) {
     if (interactiveObject !== undefined && isRightClick) {
         interactiveObject.rotation.x = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectXRotation;
     }
+    sprite.position.set(event.clientX, event.clientY - 20, 0);
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
 function onDocumentMouseUp(event) {
@@ -70,11 +79,11 @@ function onDocumentMouseUp(event) {
 
 function onDocumentMouseWheel(event) {
     event.preventDefault();
-    var number = element.style.width.split("px")[0];
-    console.log(event);
-    console.log(event.wheelDelta * 0.05);
-    number += (event.wheelDelta * 0.05);
-    console.log(number);
+//    var number = element.style.width.split("px")[0];
+//    console.log(event);
+//    console.log(event.wheelDelta * 0.05);
+//    number += (event.wheelDelta * 0.05);
+//    console.log(number);
 //    element.style.width = (number-2) + "px";
 //    console.log(element.style.width);
     if (!amILoading) {

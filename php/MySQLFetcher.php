@@ -27,14 +27,8 @@ class MySQLFetcher {
             case "image":
                 $this->contentFetcher = new ImageFetcher();
                 break;
-            case "menu":
-                $this->contentFetcher = new MenuFetcher();
-                break;
             case "nextPanoramas":
                 $this->contentFetcher = new NextPanoramasFetcher();
-                break;
-            case "nextZoom":
-                $this->contentFetcher = new NextZoomFetcher();
                 break;
             case "object":
                 $this->contentFetcher = new ObjectFetcher();
@@ -44,6 +38,15 @@ class MySQLFetcher {
                 break;
             case "text":
                 $this->contentFetcher = new TextFetcher();
+                break;
+            case "hotspot":
+                $this->contentFetcher = new HotspotFetcher();
+                break;
+            case "hotspotInfo":
+                $this->contentFetcher = new HotspotInfoFetcher();
+                break;
+            case "newxtZoom":
+                $this->contentFetcher = new NextZoomFetcher();
                 break;
             default :
                 throw new Exception("Unknown type of content");

@@ -33,8 +33,11 @@
                 var objectsPosition = [];
                 var textures = [];
                 var ZoomArray = []; //Zoom Next
-                var InteractiveText = []; //Interactive click on Text
-                var loader = new THREE.OBJMTLLoader();
+                var interactiveTexts = []; //Interactive click on Text
+                var markers = []; //Hotspot
+                var menuPoints = []; //Interactive menu
+
+                //var loader = new THREE.OBJMTLLoader();
                 var fov = 70,
                         texture,
                         isUserInteracting = false,
@@ -43,13 +46,13 @@
                         lat = 0, onMouseDownLat = 0,
                         phi = 0, theta = 0,
                         latLimit = -30,
-                        projector, panoId = 1,
+                        projector, panoId = 11,
                         minZoom = 70, maxZoom = 20,
                         interactiveObject,
                         onMouseDownObjectXRotation,
                         onMouseDownObjectYRotation,
                         onMouseDownObjectZRotation,
-                        canvas, context, intersectedObject, mouse = {x: 0, y: 0}, textTexture, sprite, time, // Text Over
+                        canvas, message, context, intersectedObject, oldIntersectedMarker, mouse = {x: 0, y: 0}, textTexture, sprite, time, // Text Over
                         isRightClick = false,
                         amILoading = false;
 
@@ -93,7 +96,7 @@
                 function init() {
                     fadeEffect.init('container', 1);
                     var container = document.getElementById('container');
-                    console.log(loader);
+                    //console.log(loader);
                     //                loader.addEventListener('load', function(event) {
                     //                    var object = event.content;
                     //                    var k = 0;
@@ -146,6 +149,7 @@
 
                     var panoName = getContent("panorama", panoId);
                     //getMedia();
+                    getHotspot();
                     texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
                     var geometry = new THREE.SphereGeometry(500, 60, 40);
                     mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: texture}));
@@ -158,17 +162,15 @@
                     ZoomArray = getContent("nextZoom", panoId);
                     //
                     // TEXT OVER
-                    //                canvas = document.createElement('canvas');
-                    //                context = canvas.getContext('2d');
-                    //                context.font = "Bold 20px Arial";
-                    //                //context.fillStyle = "rgba(0,0,0,0.95)";
-                    //                //context.fillText('Hello, world!', 0, 20);
-                    //                textTexture = new THREE.Texture(canvas);
-                    //                textTexture.needsUpdate = true;
-                    //                var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
-                    //                sprite = new THREE.Sprite(spriteMaterial);
-                    //                sprite.scale.set(200, 100, 1.0);
-                    //                scene.add(sprite);
+                    canvas = document.createElement('canvas');
+                    context = canvas.getContext('2d');
+                    context.font = "Bold 20px Arial";
+                    textTexture = new THREE.Texture(canvas);
+                    textTexture.needsUpdate = true;
+                    var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
+                    sprite = new THREE.Sprite(spriteMaterial);
+                    sprite.scale.set(200, 100, 1.0);
+                    scene.add(sprite);
                     //
                     renderer = new THREE.WebGLRenderer({antialias: true});
                     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -185,44 +187,7 @@
                         preload(panoId);
                     }, 2000);
 
-                    var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
-                    var planeWidth = 360;
-                    var planeHeight = 120;
-                    var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-                    planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-                    planeMesh.position.y += planeHeight / 2;
-                    // add it to the standard (WebGL) scene
-                    planeMesh.position = new THREE.Vector3(80, 0, -200);
-                    planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                    scene.add(planeMesh);
-                    //camera.position.set(0, 300, 400);
-
-
                     cssScene = new THREE.Scene();
-                    // create the iframe to contain webpage
-                    element = document.createElement('iframe');
-                    // webpage to be loaded into iframe
-                    element.src = "CAT_Formella04.pdf";
-                    // width of iframe in pixels
-                    var elementWidth = 1024;
-                    // force iframe to have same relative dimensions as planeGeometry
-                    var aspectRatio = planeHeight / planeWidth;
-                    var elementHeight = elementWidth * aspectRatio;
-                    element.style.width = elementWidth + "px";
-                    element.style.height = elementHeight + "px";
-
-                    // create a CSS3DObject to display element
-                    var cssObject = new THREE.CSS3DObject(element);
-                    // synchronize cssObject position/rotation with planeMesh position/rotation 
-                    cssObject.position = planeMesh.position;
-                    cssObject.rotation = planeMesh.rotation;
-                    // resize cssObject to same size as planeMesh (plus a border)
-                    var percentBorder = 0.05;
-                    cssObject.scale.x /= (1 + percentBorder) * (elementWidth / planeWidth);
-                    cssObject.scale.y /= (1 + percentBorder) * (elementWidth / planeWidth);
-                    cssScene.add(cssObject);
-
-                    //create a renderer for CSS
                     rendererCSS = new THREE.CSS3DRenderer();
                     rendererCSS.setSize(window.innerWidth, window.innerHeight);
                     rendererCSS.domElement.style.position = 'absolute';
@@ -237,9 +202,7 @@
                     // make sure original renderer appears on top of CSS renderer
                     renderer.domElement.style.zIndex = 1;
                     rendererCSS.domElement.appendChild(renderer.domElement);
-                    var circle = new THREE.Mesh(new THREE.CircleGeometry(), new THREE.MeshBasicMaterial());
-                    planeMesh.position = new THREE.Vector3(80, 0, -200);
-                    scene.add(circle);
+                    element = document.createElement('iframe');
 
                 }
 
@@ -353,11 +316,11 @@
                         objectsPosition.push(associatePosition);
                         j++;
                     }
-                    while (objectArray.length > 0) {
-                        var candidate = objectArray.pop();
-                        loader.load('objects/' + candidate['Object']);
-
-                    }
+//                    while (objectArray.length > 0) {
+//                        var candidate = objectArray.pop();
+//                        loader.load('objects/' + candidate['Object']);
+//
+//                    }
                 }
 
                 function getNewPanorama() {
@@ -396,6 +359,7 @@
                                 }, 500);
                             });
                             //getMedia();
+                            getHotspot();
                             preload(panoId);
                         }, 500);
                     }
@@ -408,80 +372,77 @@
                         var panorama = panoArray[i];
                         var image = new Image();
                         image.src = "textures/" + panorama['Panorama'];
-                        var objectArray = getContent("object", panorama['ID']);
-                        while (objectArray.length > 0) {
-                            var candidate = objectArray.pop();
-                            jQuery.get("objects/" + candidate['Object'], '');
-                        }
+//                        var objectArray = getContent("object", panorama['ID']);
+//                        while (objectArray.length > 0) {
+//                            var candidate = objectArray.pop();
+//                            jQuery.get("objects/" + candidate['Object'], '');
+//                        }
                     }
                 }
 
-                //Interactive Hotspot
-                function getMenu() {
-                    var plane = new THREE.PlaneGeometry(2, 2);
-                    var planeMat = new THREE.MeshBasicMaterial({color: 0xffff00});
-                    var mesh = new THREE.Mesh(plane, planeMat);
-                    mesh.overdraw = true;
-                    mesh.position.x = interactiveObject.position.x - 1;
-                    mesh.position.y = interactiveObject.position.y - 1;
-                    mesh.position.z = interactiveObject.position.z;
-                    mesh.rotation.x = Math.PI;
-                    scene.add(mesh);
-
-                    var idHotspot = 1; //quest'Id va visto come recuperarlo, il nostro hotspot al memento è l'interactiveObject 
-
-                    var tempMenu = getContent("menu", idHotspot)[0].Menu;
-                    console.log(tempMenu);
-                    var menu = tempMenu.split("/");
-                    var i = 0;
-                    while (i < menu.length) {
-                        var textGeo = new THREE.TextGeometry("•" + menu[i], {
-                            size: 0.2,
-                            height: 0.04,
-                            curveSegments: 8,
-                            font: "helvetiker"
-                        });
-                        textGeo.name = menu[i];
-                        var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
-                        var textMesh = new THREE.Mesh(textGeo, material);
-                        textMesh.position.x = interactiveObject.position.x - (1 / 7);
-                        textMesh.position.y = interactiveObject.position.y - (i * 1 / 3) - (1 / 3);
-                        textMesh.position.z = interactiveObject.position.z;
-                        textMesh.rotation.y = Math.PI;
-                        scene.add(textMesh);
-                        InteractiveText.push(textMesh);
-                        i++;
-                    }
-                }
-                //
 
                 //TEXT OVER
                 function update() {
+                    var d = new Date();
                     var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
                     projector.unprojectVector(vector, camera);
                     var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                    var intersects = ray.intersectObjects(objects, true);
-                    var d = new Date();
+                    var intersects = ray.intersectObjects(markers, true);
+                    if (intersects.length === 0)
+                        intersects = ray.intersectObjects(menuPoints, true);
+                    else
+                        var interactingHotspot = true;
+                    if (intersects.length === 0)
+                        intersects = ray.intersectObjects(interactiveTexts, true);
                     if (intersects.length > 0) {
                         if (intersects[0] !== intersectedObject) {
+
+                            time = d.getTime();
                             intersectedObject = intersects[0].object;
                             //Menu sphere
-                            //if (scene.lastChild.name !== "sphere") {
-                            var i = 0;
-                            while (i < 2) {
-                                var sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 40, 60), new THREE.MeshBasicMaterial({color: 0x0000ff}));
-                                sphere.position.x = intersectedObject.position.x - (1 / 7);
-                                sphere.position.y = intersectedObject.position.y - (i * 1 / 3);
-                                sphere.position.x = intersectedObject.position.z;
-                                sphere.name = "phere";
-                                scene.add(sphere);
-                                i++;
+                            if (menuPoints.length === 0) {//scene.children[scene.children.length-1].name !== "textMenu"
+
+                                var idHotspot = intersects[0].object.name;
+                                var infoArray = getContent("hotspotInfo", idHotspot);
+                                var info = infoArray.pop();
+                                if (info !== undefined) {
+                                    var menu = info['Menu'].split("/");
+                                    message = info['Subject'];
+                                    var parent = new THREE.Object3D();
+                                    parent.position.copy(intersectedObject.position);
+                                    parent.lookAt(new THREE.Vector3(0, 0, 0));
+                                    scene.add(parent);
+                                    var i = 0;
+                                    while (i < menu.length) {
+                                        var textGeo = new THREE.TextGeometry(menu[i], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
+                                        textGeo.name = menu[i];
+                                        var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
+                                        var textMesh = new THREE.Mesh(textGeo, material);
+                                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
+                                        var abbassamento = -i * 1 / menu.length + 0.07 * menu.length;
+                                        sphere.position.set(0.6, abbassamento, 0);
+                                        relativePosition(parent, sphere);
+                                        textMesh.position.set(0.8, abbassamento - 0.15, 0);
+                                        relativePosition(parent, textMesh);
+                                        textMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                                        textMesh.name = intersects[0].object.name + " " + menu[i];
+                                        //textMesh.quaternion = camera.quaternion;
+                                        sphere.name = intersects[0].object.name + " " + menu[i]; //eventualmente associare altro id
+                                        menuPoints.push(sphere);
+                                        interactiveTexts.push(textMesh);
+                                        scene.add(sphere);
+                                        scene.add(textMesh);
+                                        i++;
+                                    }
+                                }
                             }
-                            //}
                             //
-                            if (intersects[0].object.parent.name) {
+                            if (interactingHotspot) {
+                                //serve per più marker
+                                if (oldIntersectedMarker !== undefined && oldIntersectedMarker.position !== intersectedObject.position) {
+                                    clearOver();
+                                }
                                 context.clearRect(0, 0, 640, 480);
-                                var message = intersects[0].object.parent.name;
                                 var metrics = context.measureText(message);
                                 var width = metrics.width;
                                 context.fillStyle = "rgba(0,0,0,0.95)"; // black border
@@ -491,27 +452,119 @@
                                 context.fillStyle = "rgba(0,0,0,1)"; // text color
                                 context.fillText(message, 4, 20);
                                 textTexture.needsUpdate = true;
+                                oldIntersectedMarker = intersectedObject;
+                            }
+                            else {
+                                context.clearRect(0, 0, 300, 300);
+                                textTexture.needsUpdate = true;
                             }
                         }
-                        time = d.getTime();
                     }
                     else {
+                        intersectedObject = null;
                         if (d.getTime() >= time + 2000) {
-                            intersectedObject = null;
-                            context.clearRect(0, 0, 300, 300);
-                            textTexture.needsUpdate = true;
+                            clearOver();
                         }
                     }
                 }
 
+                function relativePosition(parent, child) {
+                    parent.add(child);
+                    scene.updateMatrixWorld();
+                    var vector = new THREE.Vector3();
+                    var position = vector.getPositionFromMatrix(child.matrixWorld);
+                    child.position.copy(position);
+                }
+
+                function clearOver() {
+                    context.clearRect(0, 0, 300, 300);
+                    textTexture.needsUpdate = true;
+                    while (menuPoints.length > 0) {
+                        var point = menuPoints.pop();
+                        var text = interactiveTexts.pop();
+                        scene.remove(point);
+                        scene.remove(text);
+                    }
+                }
+                function getHotspot() {
+                    while (markers.length > 0) {
+                        var obj = markers.pop();
+                        scene.remove(obj);
+                    }
+                    var hotspotArray = getContent("hotspot", panoId);
+                    while (hotspotArray.length > 0) {
+                        //var markerTexture = THREE.ImageUtils.loadTexture('images/Marker1.png');
+                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.4, 80, 120), new THREE.MeshBasicMaterial({color: 0xDB3026}));//map: markerTexture
+
+                        var hotspot = hotspotArray.pop();
+
+                        sphere.position.x = hotspot['xPosition'];
+                        sphere.position.y = hotspot['yPosition'];
+                        sphere.position.z = hotspot['zPosition'];
+                        sphere.name = hotspot['IdHotspot'];
+                        sphere.lookAt(new THREE.Vector3(0, 0, 0));
+                        scene.add(sphere);
+                        markers.push(sphere);
+
+//                    var planeMaterial = new THREE.MeshBasicMaterial({map: markerTexture});
+//                    var planeWidth = 2;
+//                    var planeHeight = 2;
+//                    var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+//                    var planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+//                    scene.add(planeMesh);
+//                    planeMesh.rotation.x = -Math.PI;
+//                    planeMesh.rotation.z = Math.PI;
+//                    planeMesh.position.y = -3;
+//                    planeMesh.position.z = 10;
+                    }
+                }
                 //HTML EMBEDDED
-                function portal() {
-                    console.log("wei");
-                    var material = new THREE.MeshBasicMaterial();
-                    var geometry = new THREE.PlaneGeometry(11, 11);
-                    var mesh = new THREE.Mesh(geometry, material);
-                    mesh.position = objects[1].position;
-                    scene.add(mesh);
+                function portal(html, hotspotPosition) {
+                    while (objects.length > 0) {
+                        var object = objects.pop();
+                        scene.remove(object);
+                    }
+                    //setTimeout(function() {
+                        var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
+                        var planeWidth = 120;
+                        var planeHeight = 120;
+                        var planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                        planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+                        planeMesh.position.y += planeHeight / 2;
+                        // add it to the standard (WebGL) scene
+                        planeMesh.position.x = hotspotPosition.x + planeMesh.geometry.width / 2;
+                        planeMesh.position.y = hotspotPosition.y;
+                        planeMesh.position.z = 100;
+                        planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
+
+                        objects.push(planeMesh);
+                        scene.add(planeMesh);
+                        //camera.position.set(0, 300, 400);
+
+                        // create the iframe to contain webpage
+                        
+                        // webpage to be loaded into iframe
+                        element.src = html;
+                        // width of iframe in pixels
+                        var elementWidth = 1024;
+                        // force iframe to have same relative dimensions as planeGeometry
+                        var aspectRatio = planeHeight / planeWidth;
+                        var elementHeight = elementWidth * aspectRatio;
+                        element.style.width = elementWidth + "px";
+                        element.style.height = elementHeight + "px";
+
+                        // create a CSS3DObject to display element
+                        var cssObject = new THREE.CSS3DObject(element);
+                        // synchronize cssObject position/rotation with planeMesh position/rotation 
+                        cssObject.position = planeMesh.position;
+                        cssObject.rotation = planeMesh.rotation;
+                        // resize cssObject to same size as planeMesh (plus a border)
+                        var percentBorder = 0.05;
+                        cssObject.scale.x /= (1 + percentBorder) * (elementWidth / planeWidth);
+                        cssObject.scale.y /= (1 + percentBorder) * (elementWidth / planeWidth);
+                        cssScene.add(cssObject);
+                    //}, 5000);
+
                 }
             </script>
         </div>

@@ -1,10 +1,10 @@
 <?php
 
-class NextPanoramasFetcher implements Fetcher {
+class HotspotFetcher implements Fetcher {
 
     public function fetch($con, $thingToFetch) {
-        $result = mysqli_query($con, "SELECT * FROM Collegamento
-                              WHERE IdCalling='" . $thingToFetch . "'");
+        $result = mysqli_query($con, "SELECT * FROM HotspotNelPanorama
+                              WHERE IdPanorama='" . $thingToFetch . "'");
 
         $all = array();
         while ($row = mysqli_fetch_assoc($result)) {
