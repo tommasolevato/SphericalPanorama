@@ -1,5 +1,4 @@
 function onDocumentMouseDown(event) {
-    event.preventDefault();
     if (event.which === 3) {
         isRightClick = true;
     }
