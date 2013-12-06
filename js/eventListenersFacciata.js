@@ -1,3 +1,5 @@
+var doubleRightClick = false;
+
 function onDocumentMouseDown(event) {
     event.preventDefault();
     if (event.which === 3) {
@@ -105,4 +107,25 @@ function onDocumentDoubleclick(event) {
 
 function onDocumentRightClick(event) {
     event.preventDefault();
+    if (doubleRightClick === true) {
+        var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
+        var newFov = fov + predefinedZoom;
+        if (maxZoom < newFov && newFov < minZoom) {
+            fov += predefinedZoom;
+            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+            render();
+        }
+        else {
+//        var found = getNewPanorama();
+//        if (!found) {
+            fov = 70;
+            camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+            render();
+//        }
+        }
+    }
+    doubleRightClick = true;
+    setTimeout(function() {
+        doubleRightClick = false;
+    }, 500);
 }

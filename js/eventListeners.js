@@ -1,4 +1,8 @@
+var isUserInteracting = false;
+var isRightClick = false;
+
 function onDocumentMouseDown(event) {
+    event.preventDefault();
     if (event.which === 3) {
         isRightClick = true;
     }
@@ -26,13 +30,33 @@ function onDocumentMouseDown(event) {
     if (intersects2.length === 0)
         intersects2 = raycaster.intersectObjects(menuPoints, true);
     if (intersects2[0] !== undefined) {
-        
         var information = intersects2[0].object.name.split(" ");
-        var hotspotArray = getContent("hotspotInfo",information[0]);
+        var hotspotArray = getContent("hotspotInfo", information[0]);
         var hotspotPosition = intersects2[0].object.position;
-        var hotspotInfo = hotspotArray.pop()[information[1]];
-        
-        portal(hotspotInfo, hotspotPosition);
+        var hotspot = hotspotArray.pop();
+        var hotspotInfo = hotspot[information[1]];
+        var heigth;
+        var width;
+        switch (information[1]) {
+            case "PDF":
+                heigth = hotspot.PDF_HEIGTH;
+                width = hotspot.PDF_HEIGTH;
+                break;
+            case "Video":
+                heigth = hotspot.VIDEO_HEIGTH;
+                width = hotspot.VIDEO_HEIGTH;
+                break;
+            case "Gallery":
+                heigth = hotspot.GALLERY_HEIGTH;
+                width = hotspot.GALLERY_HEIGTH;
+                break;
+            case "Object":
+                heigth = hotspot.OBJECT_HEIGTH;
+                width = hotspot.OBJECT_HEIGTH;
+                break;
+
+        }
+        //portal(hotspotInfo, hotspotPosition, width, heigth);
     }
 }
 
@@ -44,8 +68,6 @@ function onWindowResize() {
 
 function onDocumentMouseMove(event) {
     if (isUserInteracting && interactiveObject === undefined) {
-        console.log("Longitude: " + lon.toString());
-        console.log("Latitude: " + lat.toString());
         lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
         var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
         lat = Math.max(rawLat, latLimit);
@@ -70,24 +92,22 @@ function onDocumentMouseUp(event) {
         if (interactiveObject.rotation.y === onMouseDownObjectYRotation &&
                 interactiveObject.rotation.z === onMouseDownObjectZRotation &&
                 interactiveObject.rotation.x === onMouseDownObjectXRotation) {
-            popUp(interactiveObject.name);
+            //popUp(interactiveObject.name);
         }
     }
     interactiveObject = undefined;
 }
 
 function onDocumentMouseWheel(event) {
-    event.preventDefault();
-//    var number = element.style.width.split("px")[0];
-//    console.log(event);
-//    console.log(event.wheelDelta * 0.05);
-//    number += (event.wheelDelta * 0.05);
-//    console.log(number);
-//    element.style.width = (number-2) + "px";
-//    console.log(element.style.width);
     if (!amILoading) {
         var sub = fov - Math.min((event.wheelDeltaY * 0.05), 2);
-        if (maxZoom <= sub && sub <= minZoom) {
+        //Theme: se noi zoommiamo prima e poi cambiamo direzione possiamo scendere sotto lo zoom ottimo
+        var zoom = maxZoom;
+        var indice = whichTransitionDirection();
+        if (indice !== undefined) {
+            zoom = ZoomArray[indice]['ZoomNext'];
+        }
+        if (zoom <= sub && sub <= minZoom) {
             // WebKit
             if (event.wheelDeltaY) {
                 fov -= Math.min((event.wheelDeltaY * 0.05), 2);
@@ -101,15 +121,13 @@ function onDocumentMouseWheel(event) {
             camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
             render();
         }
-        if (sub < maxZoom) {
-            console.log("Mi hai chiamato!");
+        if (sub < zoom) {
             getNewPanorama();
         }
     }
 }
 
 function onDocumentDoubleclick(event) {
-    event.preventDefault();
     var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
     var newFov = fov - predefinedZoom;
     if (maxZoom < newFov && newFov < minZoom) {
@@ -128,5 +146,11 @@ function onDocumentDoubleclick(event) {
 }
 
 function onDocumentRightClick(event) {
+    isRightClick = true;
     event.preventDefault();
+}
+
+function printLonLatInfo() {
+    console.log("Longitude: " + lon);
+    console.log("Latitude: " + lat);
 }

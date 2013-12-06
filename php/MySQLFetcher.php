@@ -45,7 +45,7 @@ class MySQLFetcher {
             case "hotspotInfo":
                 $this->contentFetcher = new HotspotInfoFetcher();
                 break;
-            case "newxtZoom":
+            case "nextZoom":
                 $this->contentFetcher = new NextZoomFetcher();
                 break;
             default :

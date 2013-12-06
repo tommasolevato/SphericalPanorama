@@ -1,6 +1,6 @@
 <?php
 
-class NextPanoramasFetcher implements Fetcher {
+class NextZoomFetcher implements Fetcher {
 
     public function fetch($con, $thingToFetch) {
         $result = mysqli_query($con, "SELECT * FROM Collegamento
