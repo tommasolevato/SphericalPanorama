@@ -46,7 +46,6 @@
                         onMouseDownObjectZRotation,
                         canvas, message, context, intersectedObject, oldIntersectedMarker, mouse = {x: 0, y: 0}, textTexture, sprite, time, // Text Over
                         amILoading = false;
-
                 var fadeEffect = function() {
                     return{
                         init: function(id, flag, target) {
@@ -75,7 +74,6 @@
                 setTimeout(function() {
                     animate();
                 }, 1000);
-
                 function init() {
                     fadeEffect.init('container', 1);
                     var container = document.getElementById('container');
@@ -83,7 +81,6 @@
                     camera.target = new THREE.Vector3(0, 0, 0);
                     scene = new THREE.Scene();
                     projector = new THREE.Projector();
-
                     var panoName = getContent("panorama", panoId);
                     getHotspot();
                     var texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
@@ -119,8 +116,7 @@
                     window.addEventListener('resize', onWindowResize, false);
                     setTimeout(function() {
                         preload(panoId);
-                    }, 5000);
-                    
+                    }, 2000);
                     cssScene = new THREE.Scene();
                     element = document.createElement('iframe');
                     element.frameBorder = "0";
@@ -131,10 +127,8 @@
                     rendererCSS.domElement.style.margin = 0;
                     rendererCSS.domElement.style.padding = 0;
                     container.appendChild(rendererCSS.domElement);
-
                     renderer.domElement.style.position = 'absolute';
                     renderer.domElement.style.top = 0;
-
                     renderer.domElement.style.zIndex = 1;
                     rendererCSS.domElement.appendChild(renderer.domElement);
                 }
@@ -196,6 +190,7 @@
                         amILoading = true;
                         cleanUpHotSpotContent();
                         panoId = panorama['ID'];
+                        smoothTransition(panorama['Longitude'], panorama['Latitude']);
                         fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
                             var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
@@ -336,7 +331,7 @@
                     cleanUpMarkers();
                     var hotspotArray = getContent("hotspot", panoId);
                     while (hotspotArray.length > 0) {
-                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.4, 80, 120), new THREE.MeshBasicMaterial({color: 0xDB3026}));//map: markerTexture
+                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.4, 80, 120), new THREE.MeshBasicMaterial({color: 0xDB3026})); //map: markerTexture
                         var hotspot = hotspotArray.pop();
                         sphere.position.x = hotspot['xPosition'];
                         sphere.position.y = hotspot['yPosition'];
@@ -390,8 +385,44 @@
                     cssScene.add(cssObject);
                     objects.push(cssObject);
                 }
-                
-                
+
+                function smoothTransition(targetLon, targetLat) {
+                    var stepsNeeded;
+                    var step = 0.5;
+                    var lonDistance = Math.abs(lon - targetLon);
+                    var latDistance = Math.abs(lat - targetLat);
+
+                    if (lonDistance > latDistance) {
+                        stepsNeeded = Math.floor(lonDistance / step);
+                    }
+                    else {
+                        stepsNeeded = Math.floor(latDistance / step);
+                    }
+
+                    var lonStep = lonDistance / stepsNeeded;
+                    var latStep = latDistance / stepsNeeded;
+
+                    if (targetLon < lon) {
+                        lonStep = 0 - lonStep;
+                    }
+
+                    if (targetLat < lat) {
+                        latStep = 0 - latStep;
+                    }
+
+                    var stepsDone = 0;
+                    var actualTransition = function() {
+                        if (stepsDone < stepsNeeded) {
+                            stepsDone += 1;
+                            lon += lonStep;
+                            lat += latStep;
+                            requestAnimationFrame(actualTransition);
+                        }
+                    };
+                    actualTransition();
+                }
+
+
             </script>
         </div>
     </body>
