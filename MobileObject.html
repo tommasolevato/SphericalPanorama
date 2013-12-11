@@ -7,19 +7,17 @@
         <style>
             body {
                 font-family: Monospace;
-                background-image: url("background.jpg"); 
+                background-image: url("/tesifer/images/background.jpg"); 
                 margin: 0px;
                 overflow: hidden;
             }
         </style>
     </head>
     <body>
-        <input type="button" value="Zoom in"/>
-        <input type="button" value="Zoom out"/>
+        <button id="zoomIn" onclick="zoomIn()">Zoom In</button>
+        <button id="zoomOut" onclick="zoomOut()">Zoom Out</button>
         <div id="container"></div>
         <div id="info">MICC - Media Integration and Communication Center>
-            <input type="button" value="Zoom in"/>
-            <input type="button" value="Zoom out"/>
         </div>
 
         <script type="text/javascript" src="js/three.min.js"></script>
@@ -86,7 +84,6 @@
                 camera.target = new THREE.Vector3(0, 0, 0);
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
-
                 var geometry = new THREE.PlaneGeometry(200, 200);
                 geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
                 var material = new THREE.MeshBasicMaterial({color: 0xe0e0e0});
@@ -94,9 +91,7 @@
                 plane.position.set(17, 0, 0);
                 plane.lookAt(new THREE.Vector3(0, 0, 0));
                 scene.add(plane);
-
                 loader.load('objects/mobile.obj');
-
                 renderer = new THREE.WebGLRenderer({antialias: true});
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 container.appendChild(renderer.domElement);
@@ -117,11 +112,32 @@
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
-
-
             }
+
+            
+//                zoomInButton.addEventListener("click", function() {
+//                    console.log("in");
+//                    var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
+//                    var newFov = fov - predefinedZoom;
+//                    if (maxZoom < newFov && newFov < minZoom) {
+//                        fov -= predefinedZoom;
+//                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+//                        render();
+//                    }
+//                }, false);
+//
+//                zoomOutButton.addEventListener("click", function() {
+//                    console.log("out");
+//                    var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
+//                    var newFov = fov - predefinedZoom;
+//                    if (maxZoom < newFov && newFov < minZoom) {
+//                        fov += predefinedZoom;
+//                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+//                        render();
+//                    }
+//                }, false);
+//            }
             function animate() {
                 requestAnimationFrame(animate);
                 render();

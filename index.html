@@ -10,21 +10,25 @@
 
 
 
+
         <div id="container">
         </div>
         <div id="info">MICC - Media Integration and Communication Center
-
+            <button id="goToRight" onclick="goToRight()">=></button>
+            <button id="goToLeft" onclick="goToLeft()"><=</button>
+            <button id="goUp" onclick="goUp()">^</button>
+            <button id="goDown" onclick="goDown()">down</button>
             <script type="text/javascript" src="js/Three58.js"></script>
             <script type="text/javascript" src="js/ajaxMysql.js"></script>
             <script type="text/javascript" src="js/jquery.min.js"></script>
             <script type="text/javascript" src="fonts/helvetiker_regular.typeface.js"></script>
             <script type="text/javascript" src="js/eventListeners.js"></script>
             <script type="text/javascript" src="js/CSS3DRenderer.js"></script>
-            <script type="text/javascript" src="js/THREEx.WindowResize.js"></script>
 
             <script>
                 var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element, cssObject;
                 var objects = [];
+                var cssObjects = [];
                 var objectsPosition = [];
                 var textures = [];
                 var ZoomArray = []; //Zoom Next
@@ -190,23 +194,20 @@
                         amILoading = true;
                         cleanUpHotSpotContent();
                         panoId = panorama['ID'];
-                        smoothTransition(panorama['Longitude'], panorama['Latitude']);
+                        ZoomArray = getContent("nextZoom", panoId);
+                        smoothTransition(panorama['Longitude'], panorama['Latitude'], 0.5);
                         fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
                             var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
                                 mesh.material.map = texture;
-                                fov = 70;
-                                camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                                resetZoom();
                                 lat = parseFloat(panorama['LatitudeOnLoad']);
                                 lon = parseFloat(panorama['LongitudeOnLoad']);
-                                //NextZoom
-                                //
                                 fadeEffect.init('container', 1);
                                 setTimeout(function() {
                                     amILoading = false;
                                 }, 500);
                             });
-                            //getMedia();
                             getHotspot();
                             preload(panoId);
                         }, 500);
@@ -241,33 +242,32 @@
                             intersectedObject = intersects[0].object;
                             //Menu sphere
                             if (menuPoints.length === 0) {//scene.children[scene.children.length-1].name !== "textMenu"
+                                var parent = new THREE.Object3D();
+                                parent.position.copy(intersectedObject.position);
+                                parent.lookAt(new THREE.Vector3(0, 0, 0));
+                                scene.add(parent);
 
                                 var idHotspot = intersects[0].object.name;
                                 var infoArray = getContent("hotspotInfo", idHotspot);
-                                var info = infoArray.pop();
-                                if (info !== undefined) {
-                                    var menu = info['Menu'].split("/");
-                                    message = info['Subject'];
-                                    var parent = new THREE.Object3D();
-                                    parent.position.copy(intersectedObject.position);
-                                    parent.lookAt(new THREE.Vector3(0, 0, 0));
-                                    scene.add(parent);
-                                    var i = 0;
-                                    while (i < menu.length) {
-                                        var textGeo = new THREE.TextGeometry(menu[i], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
-                                        textGeo.name = menu[i];
+                                var menuLength = infoArray.length;
+                                message = infoArray[0]['Subject'];
+                                var i = 0;
+                                while (infoArray.length > 0) {
+                                    var info = infoArray.pop();
+                                    if (info !== undefined) {
+                                        var textGeo = new THREE.TextGeometry(info['Name'], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
+                                        textGeo.name = info['Name'];
                                         var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
                                         var textMesh = new THREE.Mesh(textGeo, material);
                                         var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
-                                        var abbassamento = -i * 2 / menu.length + 0.17 * menu.length;
+                                        var abbassamento = -i * 2 / menuLength + 0.17 * menuLength;
                                         sphere.position.set(0.6, abbassamento, 0);
                                         relativePosition(parent, sphere);
                                         textMesh.position.set(0.8, abbassamento - 0.15, 0);
                                         relativePosition(parent, textMesh);
                                         textMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                                        textMesh.name = intersects[0].object.name + " " + menu[i];
-                                        //textMesh.quaternion = camera.quaternion;
-                                        sphere.name = intersects[0].object.name + " " + menu[i]; //eventualmente associare altro id
+                                        textMesh.name = intersects[0].object.name + " " + info['Name'];
+                                        sphere.name = intersects[0].object.name + " " + info['Name'];
                                         menuPoints.push(sphere);
                                         interactiveTexts.push(textMesh);
                                         scene.add(sphere);
@@ -276,6 +276,36 @@
                                     }
                                 }
                             }
+//                                if (info !== undefined) {
+//                                    //var menu = info['Menu'].split("/");
+//                                    message = info['Subject'];
+//                                    var parent = new THREE.Object3D();
+//                                    parent.position.copy(intersectedObject.position);
+//                                    parent.lookAt(new THREE.Vector3(0, 0, 0));
+//                                    scene.add(parent);
+//                                    var i = 0;
+//                                    while (i < menu.length) {
+//                                        var textGeo = new THREE.TextGeometry(menu[i], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
+//                                        textGeo.name = menu[i];
+//                                        var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
+//                                        var textMesh = new THREE.Mesh(textGeo, material);
+//                                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
+//                                        var abbassamento = -i * 2 / menu.length + 0.17 * menu.length;
+//                                        sphere.position.set(0.6, abbassamento, 0);
+//                                        relativePosition(parent, sphere);
+//                                        textMesh.position.set(0.8, abbassamento - 0.15, 0);
+//                                        relativePosition(parent, textMesh);
+//                                        textMesh.lookAt(new THREE.Vector3(0, 0, 0));
+//                                        textMesh.name = intersects[0].object.name + " " + menu[i];
+//                                        sphere.name = intersects[0].object.name + " " + menu[i];
+//                                        menuPoints.push(sphere);
+//                                        interactiveTexts.push(textMesh);
+//                                        scene.add(sphere);
+//                                        scene.add(textMesh);
+//                                        i++;
+//                                    }
+//                                }
+//                            }
                             //
                             if (interactingHotspot) {
                                 //serve per più marker
@@ -300,6 +330,7 @@
                             }
                         }
                     }
+
                     else {
                         intersectedObject = null;
                         if (d.getTime() >= time + 2000) {
@@ -307,6 +338,7 @@
                         }
                     }
                 }
+
 
                 function relativePosition(parent, child) {
                     parent.add(child);
@@ -345,9 +377,15 @@
 
                 function cleanUpHotSpotContent() {
                     while (objects.length > 0) {
-                        objectToRemove = objects.pop();
+                        var objectToRemove = objects.pop();
                         scene.remove(objectToRemove);
                     }
+                    while (cssObjects.length > 0) {
+                        var cssObjectToRemove = cssObjects.pop();
+                        cssScene.remove(cssObjectToRemove);
+                    }
+                    element.style.width = 0;
+                    element.style.height = 0;
                 }
 
                 function cleanUpMarkers() {
@@ -375,20 +413,19 @@
                     element.style.width = elementWidth - 200 + "px";
                     element.style.height = elementHeight - 200 + "px";
                     cssObject = new THREE.CSS3DObject(element);
-                    planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
                     cssObject.scale.x /= (elementWidth / width);
                     cssObject.scale.y /= (elementWidth / width);
                     cssObject.position = new THREE.Vector3(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z);
                     cssObject.position.x -= 30;
                     cssObject.rotation = planeMesh.rotation;
-                    cssObject.lookAt(new THREE.Vector3(0, 0, 0));
                     cssScene.add(cssObject);
-                    objects.push(cssObject);
+                    cssObjects.push(cssObject);
+                    var response = XYZtoLonLat(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z);
+                    smoothTransition(response[0], response[1], 3);
                 }
 
-                function smoothTransition(targetLon, targetLat) {
+                function smoothTransition(targetLon, targetLat, step) {
                     var stepsNeeded;
-                    var step = 0.5;
                     var lonDistance = Math.abs(lon - targetLon);
                     var latDistance = Math.abs(lat - targetLat);
 
@@ -413,17 +450,42 @@
                     var stepsDone = 0;
                     var actualTransition = function() {
                         if (stepsDone < stepsNeeded) {
-                            stepsDone += 1;
+                            stepsDone++;
                             lon += lonStep;
                             lat += latStep;
                             requestAnimationFrame(actualTransition);
                         }
                     };
+
                     actualTransition();
                 }
 
+                function resetZoom() {
+                    fov = 70;
+                    camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                }
+
+                function goToRight() {
+                    smoothTransition(lon + 60, lat, 0.5);
+                }
+
+                function goToLeft() {
+                    smoothTransition(lon - 60, lat, 0.5);
+                }
+
+                function goUp() {
+                    smoothTransition(lon, lat + 15, 0.5);
+                }
+
+                function goDown() {
+                    var newLat = lat - 15;
+                    if (newLat >= -30) {
+                        smoothTransition(lon, newLat, 0.5);
+                    }
+                }
 
             </script>
         </div>
+        <div>Wei</div>
     </body>
 </html>

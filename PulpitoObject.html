@@ -7,14 +7,15 @@
         <style>
             body {
                 font-family: Monospace;
-                background-image: url("background.jpg"); 
+                background-image: url("/tesifer/images/background.jpg"); 
                 margin: 0px;
                 overflow: hidden;
             }
         </style>
     </head>
     <body>
-
+        <button id="zoomIn" onclick="zoomIn()">Zoom In</button>
+        <button id="zoomOut" onclick="zoomOut()">Zoom Out</button>
         <div id="container"></div>
         <div id="info">MICC - Media Integration and Communication Center</div>
 
@@ -113,7 +114,6 @@
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
 
 

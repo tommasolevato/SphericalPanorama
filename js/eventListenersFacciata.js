@@ -33,8 +33,6 @@ function onWindowResize() {
 function onDocumentMouseMove(event) {
     event.preventDefault();
     if (isUserInteracting && interactiveObject === undefined) {
-        console.log("Longitude: " + lon.toString());
-        console.log("Latitude: " + lat.toString());
         lon = mod(((onPointerDownPointerX - event.clientX) * 0.1 + onPointerDownLon), 360);
         var rawLat = (event.clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
         lat = Math.max(rawLat, latLimit);
@@ -128,4 +126,24 @@ function onDocumentRightClick(event) {
     setTimeout(function() {
         doubleRightClick = false;
     }, 500);
+}
+
+function zoomIn() {
+    var predefinedZoom = 10;
+    var newFov = fov - predefinedZoom;
+    if (maxZoom <= newFov && newFov <= minZoom) {
+        fov -= predefinedZoom;
+        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+        render();
+    }
+}
+
+function zoomOut() {
+    var predefinedZoom = 10;
+    var newFov = fov + predefinedZoom;
+    if (maxZoom <= newFov && newFov <= minZoom) {
+        fov += predefinedZoom;
+        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
+        render();
+    }
 }

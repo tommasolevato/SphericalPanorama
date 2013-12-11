@@ -7,14 +7,15 @@
         <style>
             body {
                 font-family: Monospace;
-                background-image: url("background.jpg"); 
+                background-image: url("/tesifer/images/background.jpg"); 
                 margin: 0px;
                 overflow: hidden;
             }
         </style>
     </head>
     <body>
-
+        <button id="zoomIn" onclick="zoomIn()">Zoom In</button>
+        <button id="zoomOut" onclick="zoomOut()">Zoom Out</button>
         <div id="container"></div>
         <div id="info">MICC - Media Integration and Communication Center</div>
 
@@ -73,7 +74,7 @@
                                 child.castShadow = true;//shadow
                             }
                         });
-                        object.castShadow=true;
+                        object.castShadow = true;
                     }
                     scene.add(object);
                     objects.push(object);
@@ -101,6 +102,17 @@
                 light.position.set(0, 0, 0);
                 light.target.position.set(10, 0, 0);
                 scene.add(light);
+
+                var light1 = new THREE.DirectionalLight(0xffffff);
+                light1.position.set(2, 0, 0);
+                light1.target.position.set(10, 0, 0);
+                scene.add(light1);
+
+                var light2 = new THREE.DirectionalLight(0xffffff);
+                light2.position.set(-2, 0, 0);
+                light2.target.position.set(10, 0, 0);
+                scene.add(light2);
+                scene.add(light);
                 //renderer.shadowMapEnabled = true;
                 light.castShadow = true;
                 light.shadowDarkness = 1;
@@ -113,7 +125,6 @@
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
 
 

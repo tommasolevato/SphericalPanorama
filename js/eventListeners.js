@@ -1,5 +1,7 @@
 var isUserInteracting = false;
 var isRightClick = false;
+var noZoomLevel = 70;
+
 
 function onDocumentMouseDown(event) {
     event.preventDefault();
@@ -31,39 +33,48 @@ function onDocumentMouseDown(event) {
         intersects2 = raycaster.intersectObjects(menuPoints, true);
     if (intersects2[0] !== undefined) {
         var information = intersects2[0].object.name.split(" ");
+//        var hotspotArray = getContent("hotspotInfo", information[0]);
+//        var hotspotPosition = intersects2[0].object.position;
+//        var hotspot = hotspotArray.pop();
+//        var hotspotInfo = hotspot[information[1]];
+//        var heigth;
+//        var width;
+//        switch (information[1]) {
+//            case "PDF":
+//                heigth = hotspot.PDF_HEIGTH;
+//                width = hotspot.PDF_HEIGTH;
+//                break;
+//            case "Video":
+//                heigth = hotspot.VIDEO_HEIGTH;
+//                width = hotspot.VIDEO_HEIGTH;
+//                break;
+//            case "Gallery":
+//                heigth = hotspot.GALLERY_HEIGTH;
+//                width = hotspot.GALLERY_HEIGTH;
+//                break;
+//            case "Object":
+//                heigth = hotspot.OBJECT_HEIGTH;
+//                width = hotspot.OBJECT_HEIGTH;
+//                break;
+
+
         var hotspotArray = getContent("hotspotInfo", information[0]);
         var hotspotPosition = intersects2[0].object.position;
-        var hotspot = hotspotArray.pop();
-        var hotspotInfo = hotspot[information[1]];
-        var heigth;
-        var width;
-        switch (information[1]) {
-            case "PDF":
-                heigth = hotspot.PDF_HEIGTH;
-                width = hotspot.PDF_HEIGTH;
-                break;
-            case "Video":
-                heigth = hotspot.VIDEO_HEIGTH;
-                width = hotspot.VIDEO_HEIGTH;
-                break;
-            case "Gallery":
-                heigth = hotspot.GALLERY_HEIGTH;
-                width = hotspot.GALLERY_HEIGTH;
-                break;
-            case "Object":
-                heigth = hotspot.OBJECT_HEIGTH;
-                width = hotspot.OBJECT_HEIGTH;
-                break;
-
+        while (hotspotArray.length > 0) {
+            var hotspot = hotspotArray.pop();
+            if (hotspot['Name'] === information[1]) {
+                portal(hotspot['Source'], hotspotPosition, hotspot['Width'], hotspot['Height']);
+            }
         }
-        //portal(hotspotInfo, hotspotPosition, width, heigth);
     }
 }
+
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    rendererCSS.setSize(window.innerWidth, window.innerHeight);
 }
 
 function onDocumentMouseMove(event) {
@@ -88,35 +99,30 @@ function onDocumentMouseUp(event) {
     event.preventDefault();
     isRightClick = false;
     isUserInteracting = false;
-    if (interactiveObject !== undefined) {
-        if (interactiveObject.rotation.y === onMouseDownObjectYRotation &&
-                interactiveObject.rotation.z === onMouseDownObjectZRotation &&
-                interactiveObject.rotation.x === onMouseDownObjectXRotation) {
-            //popUp(interactiveObject.name);
-        }
-    }
     interactiveObject = undefined;
 }
 
 function onDocumentMouseWheel(event) {
     if (!amILoading) {
+        var previousFov = fov;
         var sub = fov - Math.min((event.wheelDeltaY * 0.05), 2);
-        //Theme: se noi zoommiamo prima e poi cambiamo direzione possiamo scendere sotto lo zoom ottimo
         var zoom = maxZoom;
         var indice = whichTransitionDirection();
         if (indice !== undefined) {
             zoom = ZoomArray[indice]['ZoomNext'];
         }
         if (zoom <= sub && sub <= minZoom) {
-            // WebKit
             if (event.wheelDeltaY) {
                 fov -= Math.min((event.wheelDeltaY * 0.05), 2);
-                // Opera / Explorer 9
             } else if (event.wheelDelta) {
                 fov -= Math.min((event.wheelDelta * 0.05), 2);
-                // Firefox
             } else if (event.detail) {
                 fov += Math.min((event.detail * 1.0), 2);
+            }
+
+            if (planeMesh !== undefined) {
+                planeMesh.scale.x = fov / noZoomLevel;
+                planeMesh.scale.y = fov / noZoomLevel;
             }
             camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
             render();
@@ -129,8 +135,13 @@ function onDocumentMouseWheel(event) {
 
 function onDocumentDoubleclick(event) {
     var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
+    var zoom = maxZoom;
+    var indice = whichTransitionDirection();
+    if (indice !== undefined) {
+        zoom = ZoomArray[indice]['ZoomNext'];
+    }
     var newFov = fov - predefinedZoom;
-    if (maxZoom < newFov && newFov < minZoom) {
+    if (zoom < newFov && newFov < minZoom) {
         fov -= predefinedZoom;
         camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
         render();
@@ -143,6 +154,10 @@ function onDocumentDoubleclick(event) {
             render();
         }
     }
+    if (planeMesh !== undefined) {
+        planeMesh.scale.x = fov / noZoomLevel;
+        planeMesh.scale.y = fov / noZoomLevel;
+    }
 }
 
 function onDocumentRightClick(event) {
@@ -153,4 +168,23 @@ function onDocumentRightClick(event) {
 function printLonLatInfo() {
     console.log("Longitude: " + lon);
     console.log("Latitude: " + lat);
+}
+
+function isZoomIn(previousFov, fov) {
+    return previousFov > fov ? true : false;
+}
+
+
+//FIXME: non è proprio precisissima a quanto pare
+function XYZtoLonLat(x, y, z) {
+
+    var lonLat = [];
+    lonLat[1] = Math.acos(y / Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2))) - Math.PI / 2;
+    lonLat[1] *= 180 / Math.PI;
+    lonLat[1] = Math.max(lonLat[1], latLimit);//BOH
+    lonLat[0] = Math.atan(z / x);
+    lonLat[0] *= 180 / Math.PI;
+    lonLat[0] = mod(lonLat[0], 360);//BOH
+    return lonLat;
+
 }
