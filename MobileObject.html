@@ -7,18 +7,16 @@
         <style>
             body {
                 font-family: Monospace;
-                background-image: url("/tesifer/images/background.jpg"); 
+                background-image: url("images/background.jpg"); 
                 margin: 0px;
                 overflow: hidden;
             }
         </style>
     </head>
     <body>
-        <button id="zoomIn" onclick="zoomIn()">Zoom In</button>
-        <button id="zoomOut" onclick="zoomOut()">Zoom Out</button>
+
         <div id="container"></div>
-        <div id="info">MICC - Media Integration and Communication Center>
-        </div>
+        <div id="info">MICC - Media Integration and Communication Center</div>
 
         <script type="text/javascript" src="js/three.min.js"></script>
         <script type="text/javascript" src="js/OBJMTLLoader.js"></script>
@@ -46,6 +44,8 @@
                     onMouseDownObjectXRotation,
                     onMouseDownObjectYRotation,
                     onMouseDownObjectZRotation,
+                    menuSelected,
+                    menuSelectedPosition,
                     isRightClick = false;
             var manager = new THREE.LoadingManager();
             manager.onProgress = function(item, loaded, total) {
@@ -84,6 +84,7 @@
                 camera.target = new THREE.Vector3(0, 0, 0);
                 scene = new THREE.Scene();
                 projector = new THREE.Projector();
+
                 var geometry = new THREE.PlaneGeometry(200, 200);
                 geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
                 var material = new THREE.MeshBasicMaterial({color: 0xe0e0e0});
@@ -91,7 +92,104 @@
                 plane.position.set(17, 0, 0);
                 plane.lookAt(new THREE.Vector3(0, 0, 0));
                 scene.add(plane);
+
+                //TORUS
+                var pts = [];
+                var detail = 0.1;
+                var radius = 20;
+                var radius2 = 10;
+
+                for (var i = 0; i <= radius2; i += detail)
+                    pts.push(new THREE.Vector3(radius - (radius2 / 2) + i, 0, -(radius2 / 2)));
+
+                for (var i = 0; i <= radius2; i += detail)
+                    pts.push(new THREE.Vector3(radius + (radius2 / 2), 0, -(radius2 / 2) + i));
+
+                for (var i = 0; i <= radius2; i += detail)
+                    pts.push(new THREE.Vector3(radius + (radius2 / 2) - i, 0, (radius2 / 2)));
+
+                for (var i = 0; i <= radius2; i += detail)
+                    pts.push(new THREE.Vector3(radius - (radius2 / 2), 0, (radius2 / 2) - i));
+
+                var torusGeometry = new THREE.LatheGeometry(pts, 12, 0, Math.PI / 2);
+
+                var position = new THREE.Vector3(100, 0, -100);
+
+                var materials1 = [
+                    new THREE.MeshLambertMaterial({
+                        map: THREE.ImageUtils.loadTexture('images/pano_icon_vertical.png')
+                    })
+                ];
+                var torusMaterial = new THREE.MeshFaceMaterial(materials1);
+                var torus1 = new THREE.Mesh(torusGeometry, torusMaterial);
+                torus1.position = position;
+                torus1.lookAt(new THREE.Vector3(0, 0, 0));
+                torus1.rotation.z = torus1.rotation.z - Math.PI / 4;
+                torus1.name = "torus";
+                objects.push(torus1);
+                scene.add(torus1);
+
+
+                var materials2 = [
+                    new THREE.MeshLambertMaterial({
+                        map: THREE.ImageUtils.loadTexture('images/gallery_icon_horizontal.png')
+                    })
+                ];
+                var torusMaterial = new THREE.MeshFaceMaterial(materials2);
+                var torus2 = new THREE.Mesh(torusGeometry, torusMaterial);
+                torus2.position = position;
+                torus2.lookAt(new THREE.Vector3(0, 0, 0));
+                torus2.rotation.z = torus2.rotation.z + Math.PI / 4;
+                torus2.name = "torus";
+                objects.push(torus2);
+                scene.add(torus2);
+
+
+                var materials3 = [
+                    new THREE.MeshLambertMaterial({
+                        map: THREE.ImageUtils.loadTexture('images/pdf_icon_horizontal_reflected.png')
+                    })
+                ];
+                var torusMaterial = new THREE.MeshFaceMaterial(materials3);
+                var torus3 = new THREE.Mesh(torusGeometry, torusMaterial);
+                torus3.position = position;
+                torus3.lookAt(new THREE.Vector3(0, 0, 0));
+                torus3.rotation.z = torus3.rotation.z + Math.PI * 3 / 4;
+                torus3.name = "torus";
+                objects.push(torus3);
+                scene.add(torus3);
+
+
+                var materials4 = [
+                    new THREE.MeshLambertMaterial({
+                        map: THREE.ImageUtils.loadTexture('images/3d_icon_horizontal.png')
+                    })
+                ];
+                var torusMaterial = new THREE.MeshFaceMaterial(materials4);
+                var torus4 = new THREE.Mesh(torusGeometry, torusMaterial);
+                torus4.position = position;
+                torus4.lookAt(new THREE.Vector3(0, 0, 0));
+                torus4.rotation.z = torus4.rotation.z + Math.PI * 5 / 4;
+                torus4.name = "torus";
+                objects.push(torus4);
+                scene.add(torus4);
+
+                var markerTexture = THREE.ImageUtils.loadTexture('images/move_arrws_sphere.png');
+                var sphere = new THREE.Mesh(new THREE.SphereGeometry(10, 80, 120), new THREE.MeshBasicMaterial({map: markerTexture}));//map: markerTexture
+                scene.add(sphere);
+                objects.push(sphere);
+                sphere.lookAt(new THREE.Vector3(0, 0, 0));
+                sphere.position = position;
+                sphere.rotation.y = sphere.rotation.y + Math.PI / 2 + Math.atan(parseFloat(sphere.position.z) / parseFloat(sphere.position.x)); //FIXME
+                console.log(Math.atan(parseFloat(sphere.position.x) / parseFloat(sphere.position.z)));
+
+
+                //});
+                //END TORUS
+
+
                 loader.load('objects/mobile.obj');
+
                 renderer = new THREE.WebGLRenderer({antialias: true});
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 container.appendChild(renderer.domElement);
@@ -112,32 +210,22 @@
                 document.addEventListener('mouseup', onDocumentMouseUp, false);
                 document.addEventListener('mousewheel', onDocumentMouseWheel, false);
                 document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
+                document.addEventListener('dblclick', onDocumentDoubleclick, false);
                 window.addEventListener('resize', onWindowResize, false);
-            }
 
-            
-//                zoomInButton.addEventListener("click", function() {
-//                    console.log("in");
-//                    var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
-//                    var newFov = fov - predefinedZoom;
-//                    if (maxZoom < newFov && newFov < minZoom) {
-//                        fov -= predefinedZoom;
-//                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-//                        render();
-//                    }
-//                }, false);
-//
-//                zoomOutButton.addEventListener("click", function() {
-//                    console.log("out");
-//                    var predefinedZoom = Math.floor(((minZoom - maxZoom) / 3) * 1000) / 1000;
-//                    var newFov = fov - predefinedZoom;
-//                    if (maxZoom < newFov && newFov < minZoom) {
-//                        fov += predefinedZoom;
-//                        camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-//                        render();
-//                    }
-//                }, false);
-//            }
+                setTimeout(menuHandlers, 2000);
+                setTimeout(menuHandlers2, 3000);
+                setTimeout(menuHandlers, 4000);
+                setTimeout(menuHandlers2, 5000);
+                setTimeout(menuHandlers, 6000);
+                setTimeout(menuHandlers2, 7000);
+                                setTimeout(menuHandlers, 8000);
+                setTimeout(menuHandlers2, 9000);
+                                setTimeout(menuHandlers, 10000);
+                setTimeout(menuHandlers2, 11000);
+                                setTimeout(menuHandlers, 12000);
+                setTimeout(menuHandlers2, 13000);
+            }
             function animate() {
                 requestAnimationFrame(animate);
                 render();
@@ -156,5 +244,55 @@
                 var remain = num % mod;
                 return Math.floor(remain >= 0 ? remain : remain + mod);
             }
+
+            //TORUS
+            function menuHandlers() {
+                //clearPortal(); //in ogni caso cancelliamo il portale appena aperto
+                //if (interactiveObject !== menuSelected) {
+
+                //}
+                var length = objects.length;
+                var i = 0;
+                while (i < length) {
+                    if (objects[i].name === "torus")
+                        smoothZRotationTransition(objects[i], Math.PI / 2, Math.PI/12);
+                    i++;
+                }
+
+
+            }
+            function menuHandlers2() {
+                //clearPortal(); //in ogni caso cancelliamo il portale appena aperto
+                //if (interactiveObject !== menuSelected) {
+
+                //}
+                var length = objects.length;
+                var i = 0;
+                while (i < length) {
+                    if (objects[i].name === "torus")
+                        smoothZRotationTransition(objects[i], -Math.PI / 2, Math.PI/12);
+                    i++;
+                }
+
+
+            }
+            //
+            function smoothZRotationTransition(object, rotationDelta, step) {
+                var stepsNeeded = Math.abs(Math.floor(rotationDelta / step));
+                var stepsDone = 0;
+                var actualTransition = function() {
+                    if (stepsDone < stepsNeeded) {
+                        stepsDone++;
+                        if(rotationDelta>0)
+                            object.rotation.z += step;
+                        else
+                            object.rotation.z -= step;
+                        
+                        requestAnimationFrame(actualTransition);
+                    }
+                };
+                actualTransition();
+            }
+
 
         </script>
