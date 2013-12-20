@@ -187,8 +187,8 @@
                         found = isNextPano(candidate);
                     }
                     if (found) {
-                        load(candidate['ID'],candidate['LatitudeOnLoad'],candidate['LongitudeOnLoad'],
-                            candidate['Latitude'], candidate['Longitude']);
+                        smoothLonLatTransition(candidate['Longitude'], candidate['Latitude'], 0.5);
+                        load(candidate['ID'],candidate['LatitudeOnLoad'],candidate['LongitudeOnLoad']);
                     }
                     return found;
                 }
@@ -200,7 +200,7 @@
                         panoId = id;
                         var panorama=getContent("panorama", panoId);
                         ZoomArray = getContent("nextZoom", panoId);
-                        smoothLonLatTransition(longitude, latitude, 0.5);
+                        //smoothLonLatTransition(longitude, latitude, 0.5);
                         fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
                             var texture = THREE.ImageUtils.loadTexture('textures/' + panorama, '', function onLoad() {

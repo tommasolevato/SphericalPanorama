@@ -123,6 +123,7 @@ function onDocumentMouseWheel(event) {
                 var candidatePreviousPano = previousPanoArray.pop();
                 if (Math.abs(lat - candidatePreviousPano['LatitudeOnLoad']) < 20 &
                         Math.abs(lon - candidatePreviousPano['LongitudeOnLoad']) < 20) {
+                    smoothLonLatTransition(candidatePreviousPano['LongitudeOnLoad'], candidatePreviousPano['LatitudeOnLoad'], 0.5);
                     load(candidatePreviousPano['IdCalling'], candidatePreviousPano['Latitude'], candidatePreviousPano['Longitude']);
                     //qui non passo i valori attuali perché non voglio fare la transizione smooth
                 }
