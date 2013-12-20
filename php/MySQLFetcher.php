@@ -48,6 +48,12 @@ class MySQLFetcher {
             case "nextZoom":
                 $this->contentFetcher = new NextZoomFetcher();
                 break;
+            case "gallery":
+                $this->contentFetcher = new GalleryFetcher();
+                break;
+            case "previousPano":
+                $this->contentFetcher = new PreviousPanoFetcher();
+                break;
             default :
                 throw new Exception("Unknown type of content");
         }

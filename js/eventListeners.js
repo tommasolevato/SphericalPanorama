@@ -101,7 +101,7 @@ function onDocumentMouseWheel(event) {
             if (event.wheelDeltaY) {
                 fov -= Math.min((delta * 0.05), 2);
             } else if (event.wheelDelta) {
-                fov += Math.min((delta * 0.05), 2);
+                fov -= Math.min((delta * 0.05), 2);
             } else if (event.detail) {
                 fov += Math.min((delta * 1.0), 2);
             }
@@ -114,7 +114,6 @@ function onDocumentMouseWheel(event) {
             render();
         }
         if (sub < zoom & delta>0) {
-            console.log(panoId);
             getNewPanorama(panoId);
         }
         //Zoom Previous
@@ -189,5 +188,40 @@ function XYZtoLonLat(x, y, z) {
     lonLat[0] *= 180 / Math.PI;
     lonLat[0] = mod(lonLat[0], 360); //BOH
     return lonLat;
-    
+}
+
+function onHotspotClick() {
+
+    function search(name) {
+        for (var i = 0; i < hotspotArray.length; i++) {
+            if (hotspotArray[i].name === name) {
+                return hotspotArray[i];
+            }
+        }
+        return undefined;
+    }
+
+    cleanUpHotSpotContent();
+    var hotspotInfo = getContent("hotspotInfo", 1);
+    console.log(hotspotInfo);
+    if (interactiveObject !== selectedFrame) {
+        var hotspotArray = getContent("hotspotInfo", interactiveObject.hotspotId);
+        console.log(hotspotInfo);
+        var hotspotInfo = search(interactiveObject.name);
+        portal(hotspotInfo[Source], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"]);
+//        switch (interactiveObject.name) {
+//            case "Gallery":
+//                var hotspotInfo = search("Gallery");
+//                break;
+//            case "Object":
+//                var hotspotInfo = search("Object");
+//                break;
+//            case "Panorama":
+//                var hotspotInfo = search("Panorama");
+//                break;
+//            case "PDF":
+//                var hotspotInfo = search("PDF");
+//                break;
+//        }
+    }
 }

@@ -18,12 +18,14 @@
             <button id="goToLeft" onclick="goToLeft()"><=</button>
             <button id="goUp" onclick="goUp()">^</button>
             <button id="goDown" onclick="goDown()">down</button>
-            <script type="text/javascript" src="js/Three58.js"></script>
-            <script type="text/javascript" src="js/ajaxMysql.js"></script>
-            <script type="text/javascript" src="js/jquery.min.js"></script>
-            <script type="text/javascript" src="fonts/helvetiker_regular.typeface.js"></script>
-            <script type="text/javascript" src="js/eventListeners.js"></script>
-            <script type="text/javascript" src="js/CSS3DRenderer.js"></script>
+            <script src="js/Three58.js"></script>
+            <script src="js/ajaxMysql.js"></script>
+            <script src="js/jquery.min.js"></script>
+            <script src="fonts/helvetiker_regular.typeface.js"></script>
+            <script src="js/eventListeners.js"></script>
+            <script src="js/CSS3DRenderer.js"></script>
+            <script src="js/hotspot.js"></script>
+            <script src="js/utilities.js"></script>
 
             <script>
                 var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element, cssObject;
@@ -45,6 +47,7 @@
                         projector, panoId = 11,
                         minZoom = 70, maxZoom = 20,
                         interactiveObject,
+                        selectedFrame,
                         onMouseDownObjectXRotation,
                         onMouseDownObjectYRotation,
                         onMouseDownObjectZRotation,
@@ -127,7 +130,7 @@
                     rendererCSS = new THREE.CSS3DRenderer();
                     rendererCSS.setSize(window.innerWidth, window.innerHeight);
                     rendererCSS.domElement.style.position = 'absolute';
-                    rendererCSS.domElement.style.top = 0;
+                    rendererCSS.domElement.style.top = 100;
                     rendererCSS.domElement.style.margin = 0;
                     rendererCSS.domElement.style.padding = 0;
                     container.appendChild(rendererCSS.domElement);
@@ -139,7 +142,7 @@
 
                 function animate() {
                     requestAnimationFrame(animate);
-                    update();
+                    //update();
                     render();
                 }
 
@@ -176,37 +179,39 @@
                     }
                 }
 
-                function getNewPanorama() {
-                    var panoArray = getContent("nextPanoramas", panoId);
+                function getNewPanorama(id) {
+                    var panoArray = getContent("nextPanoramas", id);
                     var found = false;
                     while (panoArray.length > 0 && !found) {
                         var candidate = panoArray.pop();
                         found = isNextPano(candidate);
                     }
                     if (found) {
-                        load(candidate);
+                        load(candidate['ID'],candidate['LatitudeOnLoad'],candidate['LongitudeOnLoad'],
+                            candidate['Latitude'], candidate['Longitude']);
                     }
                     return found;
                 }
 
-                function load(panorama) {
+                function load(id, latitude, longitude) { //FIXME
                     if (!amILoading) {
                         amILoading = true;
                         cleanUpHotSpotContent();
-                        panoId = panorama['ID'];
+                        panoId = id;
+                        var panorama=getContent("panorama", panoId);
                         ZoomArray = getContent("nextZoom", panoId);
-                        smoothTransition(panorama['Longitude'], panorama['Latitude'], 0.5);
+                        smoothLonLatTransition(longitude, latitude, 0.5);
                         fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
-                            var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
+                            var texture = THREE.ImageUtils.loadTexture('textures/' + panorama, '', function onLoad() {
                                 mesh.material.map = texture;
                                 resetZoom();
-                                lat = parseFloat(panorama['LatitudeOnLoad']);
-                                lon = parseFloat(panorama['LongitudeOnLoad']);
+                                lat = parseFloat(latitude);
+                                lon = parseFloat(longitude);
                                 fadeEffect.init('container', 1);
                                 setTimeout(function() {
                                     amILoading = false;
-                                }, 500);
+                                }, 1000);
                             });
                             getHotspot();
                             preload(panoId);
@@ -359,72 +364,7 @@
                     }
                 }
 
-                function getHotspot() {
-                    cleanUpMarkers();
-                    var hotspotArray = getContent("hotspot", panoId);
-                    while (hotspotArray.length > 0) {
-                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.4, 80, 120), new THREE.MeshBasicMaterial({color: 0xDB3026})); //map: markerTexture
-                        var hotspot = hotspotArray.pop();
-                        sphere.position.x = hotspot['xPosition'];
-                        sphere.position.y = hotspot['yPosition'];
-                        sphere.position.z = hotspot['zPosition'];
-                        sphere.name = hotspot['IdHotspot'];
-                        sphere.lookAt(new THREE.Vector3(0, 0, 0));
-                        scene.add(sphere);
-                        markers.push(sphere);
-                    }
-                }
-
-                function cleanUpHotSpotContent() {
-                    while (objects.length > 0) {
-                        var objectToRemove = objects.pop();
-                        scene.remove(objectToRemove);
-                    }
-                    while (cssObjects.length > 0) {
-                        var cssObjectToRemove = cssObjects.pop();
-                        cssScene.remove(cssObjectToRemove);
-                    }
-                    element.style.width = 0;
-                    element.style.height = 0;
-                }
-
-                function cleanUpMarkers() {
-                    while (markers.length > 0) {
-                        var obj = markers.pop();
-                        scene.remove(obj);
-                    }
-                }
-
-                function portal(html, hotspotPosition, width, heigth) {
-                    cleanUpHotSpotContent();
-                    var planeMaterial = new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, side: THREE.DoubleSide});
-                    var planeGeometry = new THREE.PlaneGeometry(width, heigth);
-                    planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-                    planeMesh.position.x = hotspotPosition.x + (planeMesh.geometry.width / 2) + 50;
-                    planeMesh.position.y = hotspotPosition.y;
-                    planeMesh.position.z = 200;
-                    planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                    objects.push(planeMesh);
-                    scene.add(planeMesh);
-                    element.src = html;
-                    var elementWidth = 1024;
-                    var aspectRatio = heigth / width;
-                    var elementHeight = elementWidth * aspectRatio;
-                    element.style.width = elementWidth - 200 + "px";
-                    element.style.height = elementHeight - 200 + "px";
-                    cssObject = new THREE.CSS3DObject(element);
-                    cssObject.scale.x /= (elementWidth / width);
-                    cssObject.scale.y /= (elementWidth / width);
-                    cssObject.position = new THREE.Vector3(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z);
-                    cssObject.position.x -= 30;
-                    cssObject.rotation = planeMesh.rotation;
-                    cssScene.add(cssObject);
-                    cssObjects.push(cssObject);
-                    var response = XYZtoLonLat(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z);
-                    smoothTransition(response[0], response[1], 3);
-                }
-
-                function smoothTransition(targetLon, targetLat, step) {
+                function smoothLonLatTransition(targetLon, targetLat, step) {
                     var stepsNeeded;
                     var lonDistance = Math.abs(lon - targetLon);
                     var latDistance = Math.abs(lat - targetLat);
@@ -460,32 +400,43 @@
                     actualTransition();
                 }
 
-                function resetZoom() {
-                    fov = 70;
-                    camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                }
-
                 function goToRight() {
-                    smoothTransition(lon + 60, lat, 0.5);
+                    smoothLonLatTransition(lon + 60, lat, 0.5);
                 }
 
                 function goToLeft() {
-                    smoothTransition(lon - 60, lat, 0.5);
+                    smoothLonLatTransition(lon - 60, lat, 0.5);
                 }
 
                 function goUp() {
-                    smoothTransition(lon, lat + 15, 0.5);
+                    smoothLonLatTransition(lon, lat + 15, 0.5);
                 }
 
                 function goDown() {
                     var newLat = lat - 15;
-                    if (newLat >= -30) {
-                        smoothTransition(lon, newLat, 0.5);
+                    if (newLat >= latLimit) {
+                        smoothLonLatTransition(lon, newLat, 0.5);
                     }
+                }
+
+                function smoothZRotationTransition(object, rotationDelta, step) {
+                    var stepsNeeded = Math.abs(Math.floor(rotationDelta / step));
+                    var stepsDone = 0;
+                    var actualTransition = function() {
+                        if (stepsDone < stepsNeeded) {
+                            stepsDone++;
+                            if (rotationDelta > 0) {
+                                object.rotation.z += step;
+                            }
+                            else
+                                object.rotation.z -= step;
+                            requestAnimationFrame(actualTransition);
+                        }
+                    }
+                    actualTransition();
                 }
 
             </script>
         </div>
-        <div>Wei</div>
     </body>
 </html>

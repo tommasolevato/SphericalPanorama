@@ -1,159 +1,80 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
 <!DOCTYPE html>
-<html lang="en">
+<html>
     <head>
-        <title>three.js webgl - Spherical Panorama by Leonardo Galli & Tommaso Levato</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <style>
-            body {
-                font-family: Monospace;
-                background-color: #000000;
-                margin: 0px;
-                overflow: hidden;
+            section {
+                position:absolute;
+                left:7.5%;
+                text-align: center;
+                max-width:85%;
+            }
+            .grid {
+                max-width:800px;
+                display:inline-block;
+                width:200px;
+                height:200px;
+                box-shadow: 5px 5px 5px #888888;
+                margin: 6px 6px 0px 0px;
+                border-radius: 4px;
+            }
+            body{
+                background-color: #FFFFFF;
             }
         </style>
-    </head>
-    <body>
-
-        <div id="container"></div>
-        <div id="info">MICC - Media Integration and Communication Center</div>
-
-        <script type="text/javascript" src="js/three.min.js"></script>
+        <script type="text/javascript" src="html5lightbox/jquery.js"></script>
+        <script type="text/javascript" src="html5lightbox/html5lightbox.js"></script>
         <script type="text/javascript" src="js/ajaxMysql.js"></script>
-        <script type="text/javascript" src="js/eventListenersFacciata.js"></script>
+
+    </head>
+
+    <body>
+        <section id="picture">
+            <!--<a href="images/Facciata.jpg" class="html5lightbox" data-group="mygroup" ><img class="grid" src="images/FormellaCroce.jpg" /></a>-->
+        </section>
 
         <script>
-            //arrow helper?
-            var camera, scene, renderer, mesh;
-            var fov = 70,
-                    plane,
-                    objects = [],
-                    isUserInteracting = false,
-                    onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-                    lon = 0, onMouseDownLon = 0,
-                    lat = 0, onMouseDownLat = 0,
-                    phi = 0, theta = 0,
-                    latLimit = -30,
-                    projector,
-                    minZoom = 100, maxZoom = 20,
-                    interactiveObject,
-                    onMouseDownObjectXRotation,
-                    onMouseDownObjectYRotation,
-                    onMouseDownObjectZRotation,
-                    isRightClick = false;
-            var manager = new THREE.LoadingManager();
-            manager.onProgress = function(item, loaded, total) {
-                console.log(item, loaded, total);
-            };
-            init();
-            animate();
-            function init() {
+            var galleryId = 1;
+            view();
 
-                camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                camera.target = new THREE.Vector3(0, 0, 0);
-                scene = new THREE.Scene();
-                projector = new THREE.Projector();
-
-//                var markerTexture = THREE.ImageUtils.loadTexture('images/Facciata.jpg');
-//                var geometry = new THREE.PlaneGeometry(20, 20);
-//                var material = new THREE.MeshBasicMaterial({map: markerTexture});
-//                plane = new THREE.Mesh(geometry, material);
-//                plane.position.set(17, 0, 0);
-//                plane.lookAt(new THREE.Vector3(0, 0, 0));
-//                scene.add(plane);
-                var materials = [
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    }),
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    }),
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    }),
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    }),
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    }),
-                    new THREE.MeshLambertMaterial({
-                        map: THREE.ImageUtils.loadTexture('images/FormellaCroce.jpg')
-                    })
-                ];
-                var cube = new THREE.Mesh(
-                        new THREE.CubeGeometry(10, 10, 10, 1, 1, 1),
-                        new THREE.MeshFaceMaterial(materials));
-                cube.position.set(17, 0, 0);
-                scene.add(cube);
-                objects.push(cube);
-
-
-                renderer = new THREE.WebGLRenderer({antialias: true});
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                container.appendChild(renderer.domElement);
-                //shadow
-                var light = new THREE.DirectionalLight(0xffffff);
-                light.position.set(0, 0, 0);
-                light.target.position.set(10, 0, 0);
-                scene.add(light);
-                //renderer.shadowMapEnabled = true;
-                light.castShadow = true;
-                light.shadowDarkness = 1;
-                renderer.shadowMapSoft = true;
-                //plane.receiveShadow = true;
-                //
-                document.addEventListener('contextmenu', onDocumentRightClick, false);
-                document.addEventListener('mousedown', onDocumentMouseDown, false);
-                document.addEventListener('mousemove', onDocumentMouseMove, false);
-                document.addEventListener('mouseup', onDocumentMouseUp, false);
-                document.addEventListener('mousewheel', onDocumentMouseWheel, false);
-                document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                document.addEventListener('dblclick', onDocumentDoubleclick, false);
-                window.addEventListener('resize', onWindowResize, false);
-
-
-            }
-            function animate() {
-                requestAnimationFrame(animate);
-                render();
-            }
-            function render() {
-                lat = Math.max(-85, Math.min(85, lat));
-                phi = THREE.Math.degToRad(90 - lat);
-                theta = THREE.Math.degToRad(lon);
-                camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
-                camera.target.y = 500 * Math.cos(phi);
-                camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
-                camera.lookAt(camera.target);
-                renderer.render(scene, camera);
-            }
-            function onDocumentMouseDown(event) {
-                event.preventDefault();
-                if (event.which === 3) {
-                    isRightClick = true;
+            function view() {
+                var mediaArray = getContent("gallery", galleryId);
+                var length = mediaArray.length;
+                var i = 1;
+                var popup = document.createElement('div');
+                while (mediaArray.length > 0) {
+                    var media = mediaArray.pop();
+                    var text = '<a href="images/';
+                    text += media['Source'] + '"';
+                    text += ' class="html5lightbox"';
+                    if (media['Title'] !== null) {
+                        text += ' title="' + i.toString() + "/" + length.toString() + " " + media['Title'] + '"';
+                    }
+                    else
+                        text += ' title="' + i.toString() + "/" + length.toString() + '"';
+                    if (media['Width'] !== null) {
+                        text += 'data-width="' + media['Width'].toString() + '"';
+                    }
+                    if (media['Height'] !== null) {
+                        text += 'data-height="' + media['Height'].toString() + '"';
+                    }
+                    text += ' data-group="mygroup">';
+                    text += '<img class="grid" src="images/';
+                    text += media['Thumbnail'] + '"/></a>';
+                    console.log(text);
+                    popup.innerHTML = popup.innerHTML + text;
+                    i++;
                 }
-                isUserInteracting = true;
-                onPointerDownPointerX = event.clientX;
-                onPointerDownPointerY = event.clientY;
-                onPointerDownLon = lon;
-                onPointerDownLat = lat;
-                var mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-                var mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-                var vector = new THREE.Vector3(mouseX, mouseY, 0.5);
-                projector.unprojectVector(vector, camera);
-                var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                var intersects = raycaster.intersectObjects(objects, true);
-                if (intersects[0] !== undefined) {
-                    interactiveObject = intersects[0].object;
-                    onMouseDownObjectXRotation = interactiveObject.rotation.x;
-                    onMouseDownObjectYRotation = interactiveObject.rotation.y;
-                    onMouseDownObjectZRotation = interactiveObject.rotation.z;
-                }
-            }
-            function mod(num, mod) {
-                var remain = num % mod;
-                return Math.floor(remain >= 0 ? remain : remain + mod);
+                var section = document.getElementById("picture");
+                section.appendChild(popup);
             }
 
         </script>
+
+    </body>
+</html>
