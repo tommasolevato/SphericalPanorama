@@ -107,8 +107,8 @@ function onDocumentMouseWheel(event) {
             }
 
             if (planeMesh !== undefined) {
-                planeMesh.scale.x = fov / noZoomLevel;
-                planeMesh.scale.y = fov / noZoomLevel;
+                //planeMesh.scale.x = fov / noZoomLevel;
+                //planeMesh.scale.y = fov / noZoomLevel;
             }
             camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
             render();
@@ -155,8 +155,8 @@ function onDocumentDoubleclick(event) {
         }
     }
     if (planeMesh !== undefined) {
-        planeMesh.scale.x = fov / noZoomLevel;
-        planeMesh.scale.y = fov / noZoomLevel;
+//        planeMesh.scale.x = fov / noZoomLevel;
+//        planeMesh.scale.y = fov / noZoomLevel;
     }
 }
 

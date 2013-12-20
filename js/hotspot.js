@@ -30,9 +30,13 @@ function cleanUpMarkers() {
     }
 }
 
-function portal(html, hotspotPosition, width, heigth, leftOrRight) {
+function portal(html, hotspotPosition, width, heigth, leftOrRight, color) {
     var planeMaterial = new THREE.MeshBasicMaterial({color: 0x00000, opacity: 0.1});
     var planeGeometry = new THREE.PlaneGeometry(width, heigth);
+    var cornice=15;
+    var frame = makeFrame(parseInt(width)+cornice, parseInt(heigth)+cornice, 25, 10, cornice, color);
+    objects.push(frame);//NEW
+
     planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
     planeMesh.position.x = hotspotPosition.x; //+ (planeMesh.geometry.width / 2) + 50;
     planeMesh.position.y = hotspotPosition.y;
@@ -69,6 +73,12 @@ function portal(html, hotspotPosition, width, heigth, leftOrRight) {
     cssObjects.push(cssObject);
     var response = XYZtoLonLat(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z);
     smoothLonLatTransition(response[0], response[1], 3);
+    frame.position = new THREE.Vector3(planeMesh.position.x-1, planeMesh.position.y,planeMesh.position.z-planeMesh.position.z/planeMesh.position.x) ;
+    frame.rotation = new THREE.Vector3(planeMesh.rotation.x, planeMesh.rotation.y, planeMesh.rotation.z);
+    if (leftOrRight === "left") {
+        frame.rotation.y += Math.PI;
+    }
+    scene.add(frame);
 }
 
 function makeHotspot(position, id) {
@@ -164,7 +174,7 @@ function makeHotspot(position, id) {
 }
 
 function manageHotspot() {
-    
+
     function rotate(angle) {
         for (var i = 0; i < markers.length; i++) {
             if (markers[i].hotspotId === interactiveObject.hotspotId) {
@@ -198,7 +208,7 @@ function manageHotspot() {
         var response = XYZtoLonLat(hotspotInfo["xPosition"], hotspotInfo["yPosition"], hotspotInfo["zPosition"]);
         smoothLonLatTransition(response[0], response[1], 3);
     }
-    
+
     cleanUpHotSpotContent();
     restoreHotspotPosition(interactiveObject.hotspotId);
     var hotspotArray = getContent("hotspotInfo", interactiveObject.hotspotId);
@@ -210,7 +220,7 @@ function manageHotspot() {
                 rotate(Math.PI / 2);
                 var hotspotInfo = search("Gallery");
 //                restoreHotspotPosition(interactiveObject.hotspotId);
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left");
+                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xffff00);
                 interactiveObject.position.x += 5;
                 selectedFrame = interactiveObject;
             }
@@ -219,7 +229,7 @@ function manageHotspot() {
                     rightPosition = false;
                     var hotspotInfo = search("Gallery");
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left");
+                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xffff00);
                     interactiveObject.position.x += 5;
                     selectedFrame = interactiveObject;
                 }
@@ -239,7 +249,7 @@ function manageHotspot() {
                 rotate(Math.PI / 2);
                 var hotspotInfo = search("Object");
 //                restoreHotspotPosition(interactiveObject.hotspotId);
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right");
+                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right", 0x00ff00);
                 selectedFrame = interactiveObject;
                 interactiveObject.position.x -= 5;
             }
@@ -248,7 +258,7 @@ function manageHotspot() {
                     rightPosition = false;
                     var hotspotInfo = search("Object");
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right");
+                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x00ff00);
                     selectedFrame = interactiveObject;
                     interactiveObject.position.x -= 5;
                 } else {
@@ -266,7 +276,7 @@ function manageHotspot() {
                 rightPosition = true;
                 rotate(-Math.PI / 2);
                 var hotspotInfo = search("Panorama");
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right");
+                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x0000ff);
                 selectedFrame = interactiveObject;
                 interactiveObject.position.x -= 5;
             }
@@ -279,7 +289,7 @@ function manageHotspot() {
                 }
                 else {
                     var hotspotInfo = search("Panorama");
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right");
+                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x0000ff);
                     interactiveObject.position.x -= 5;
                     selectedFrame = interactiveObject;
                 }
@@ -290,7 +300,7 @@ function manageHotspot() {
                 rightPosition = true;
                 rotate(-Math.PI / 2);
                 var hotspotInfo = search("PDF");
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left");
+                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left",0xff0000);
                 interactiveObject.position.x += 5;
                 selectedFrame = interactiveObject;
             }
@@ -303,7 +313,7 @@ function manageHotspot() {
                 }
                 else {
                     var hotspotInfo = search("PDF");
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left");
+                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left",0xff0000);
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
                     interactiveObject.position.x += 5;
                     selectedFrame = interactiveObject;
@@ -314,8 +324,8 @@ function manageHotspot() {
 }
 
 function searchMarker(hotspotId, name) {
-    for(var i=0; i<markers.length; i++) {
-        if(markers[i].hotspotId === hotspotId && markers[i].name === name) {
+    for (var i = 0; i < markers.length; i++) {
+        if (markers[i].hotspotId === hotspotId && markers[i].name === name) {
             return markers[i];
         }
     }
@@ -325,9 +335,52 @@ function restoreHotspotPosition(hotspotId) {
     var hotspotArray = getContent("hotspotInfo", hotspotId);
     var hotspotInfo = hotspotArray.pop();
     console.log(hotspotInfo);
-    for(var i=0; i<markers.length; i++) {
-        if(markers[i].hotspotId === hotspotId) {
+    for (var i = 0; i < markers.length; i++) {
+        if (markers[i].hotspotId === hotspotId) {
             markers[i].position = new THREE.Vector3(parseInt(hotspotInfo['xPosition']), parseInt(hotspotInfo['yPosition']), parseInt(hotspotInfo['zPosition']));
         }
     }
+}
+
+function makeFrame(width, height, radius, inside, cornice, color) {
+
+    var californiaPts = [];
+    var detail = .1;
+
+    californiaPts.push(new THREE.Vector2(-width / 2, -height / 2));
+    //californiaPts.push(new THREE.Vector2(-width/2, - Math.sqrt(radius^2-(radius-inside)^2)));
+
+    var alpha = Math.acos((radius - inside) / radius);
+    for (var angle = -alpha; angle < alpha; angle += detail)
+        californiaPts.push(new THREE.Vector2(-width / 2 - (radius - inside) + Math.cos(angle) * radius, Math.sin(angle) * radius));
+
+    //californiaPts.push(new THREE.Vector2(-width/2, Math.sqrt(radius^2-(radius-inside)^2)));
+    californiaPts.push(new THREE.Vector2(-width / 2, height / 2));
+    californiaPts.push(new THREE.Vector2(width / 2, height / 2));
+    californiaPts.push(new THREE.Vector2(width / 2, -height / 2));
+
+    californiaPts.push(new THREE.Vector2(+0.00001 - width / 2, -height / 2));
+
+
+    var center = inside / 2;
+    californiaPts.push(new THREE.Vector2(center + 0.00001 + cornice - width / 2, +cornice - height / 2));
+    californiaPts.push(new THREE.Vector2(center - cornice + width / 2, +cornice - height / 2));
+    californiaPts.push(new THREE.Vector2(center - cornice + width / 2, -cornice + height / 2));
+    californiaPts.push(new THREE.Vector2(center + cornice - width / 2, -cornice + height / 2));
+    californiaPts.push(new THREE.Vector2(center + cornice - width / 2, +cornice - height / 2));
+
+    californiaPts.push(new THREE.Vector2(-width / 2, -height / 2));
+
+
+    var californiaShape = new THREE.Shape(californiaPts);
+    var extrudeSettings = {amount: 2};
+
+
+    extrudeSettings.bevelEnabled = false;
+    extrudeSettings.bevelSegments = 2;
+    extrudeSettings.steps = 2;
+
+
+    var geometry = new THREE.ExtrudeGeometry(californiaShape, extrudeSettings);
+    return new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
 }
