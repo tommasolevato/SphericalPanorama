@@ -85,16 +85,16 @@ function onDocumentMouseWheel(event) {
         //var previousFov = fov;
         var delta;
         if (event.wheelDeltaY) {
-            delta=event.wheelDeltaY;
+            delta = event.wheelDeltaY;
         } else if (event.wheelDelta) {
-            delta=event.wheelDelta;
+            delta = event.wheelDelta;
         } else if (event.detail) {
-            delta=event.detail;
+            delta = event.detail;
         }
         var sub = fov - Math.min((delta * 0.05), 2);
         var zoom = maxZoom;
         var indice = whichTransitionDirection();
-        if (indice !== undefined & delta>0) {
+        if (indice !== undefined & delta > 0) {
             zoom = ZoomArray[indice]['ZoomNext'];
         }
         if (zoom <= sub && sub <= minZoom) {
@@ -113,22 +113,22 @@ function onDocumentMouseWheel(event) {
             camera.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, 1100);
             render();
         }
-        if (sub < zoom & delta>0) {
+        if (sub < zoom & delta > 0) {
             getNewPanorama(panoId);
         }
         //Zoom Previous
-        if(delta<0 & fov>69.){ // 69. FIXME
-            var previousPanoArray=getContent("previousPano", panoId);
-            while(previousPanoArray.length>0){
-                var candidatePreviousPano=previousPanoArray.pop();
-                if(Math.abs(lat-candidatePreviousPano['LatitudeOnLoad'])<20 &
-                        Math.abs(lon-candidatePreviousPano['LongitudeOnLoad'])<20){
-                    load(candidatePreviousPano['IdCalling'],candidatePreviousPano['Latitude'],candidatePreviousPano['Longitude'] );
+        if (delta < 0 & fov > 69.) { // 69. FIXME
+            var previousPanoArray = getContent("previousPano", panoId);
+            while (previousPanoArray.length > 0) {
+                var candidatePreviousPano = previousPanoArray.pop();
+                if (Math.abs(lat - candidatePreviousPano['LatitudeOnLoad']) < 20 &
+                        Math.abs(lon - candidatePreviousPano['LongitudeOnLoad']) < 20) {
+                    load(candidatePreviousPano['IdCalling'], candidatePreviousPano['Latitude'], candidatePreviousPano['Longitude']);
                     //qui non passo i valori attuali perché non voglio fare la transizione smooth
                 }
             }
         }
-        
+
     }
 }
 
@@ -188,40 +188,4 @@ function XYZtoLonLat(x, y, z) {
     lonLat[0] *= 180 / Math.PI;
     lonLat[0] = mod(lonLat[0], 360); //BOH
     return lonLat;
-}
-
-function onHotspotClick() {
-
-    function search(name) {
-        for (var i = 0; i < hotspotArray.length; i++) {
-            if (hotspotArray[i].name === name) {
-                return hotspotArray[i];
-            }
-        }
-        return undefined;
-    }
-
-    cleanUpHotSpotContent();
-    var hotspotInfo = getContent("hotspotInfo", 1);
-    console.log(hotspotInfo);
-    if (interactiveObject !== selectedFrame) {
-        var hotspotArray = getContent("hotspotInfo", interactiveObject.hotspotId);
-        console.log(hotspotInfo);
-        var hotspotInfo = search(interactiveObject.name);
-        portal(hotspotInfo[Source], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"]);
-//        switch (interactiveObject.name) {
-//            case "Gallery":
-//                var hotspotInfo = search("Gallery");
-//                break;
-//            case "Object":
-//                var hotspotInfo = search("Object");
-//                break;
-//            case "Panorama":
-//                var hotspotInfo = search("Panorama");
-//                break;
-//            case "PDF":
-//                var hotspotInfo = search("PDF");
-//                break;
-//        }
-    }
 }
