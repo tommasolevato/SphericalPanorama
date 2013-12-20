@@ -115,7 +115,7 @@ function onDocumentMouseWheel(event) {
             if (event.wheelDeltaY) {
                 fov -= Math.min((event.wheelDeltaY * 0.05), 2);
             } else if (event.wheelDelta) {
-                fov -= Math.min((event.wheelDelta * 0.05), 2);
+                fov += Math.min((event.wheelDelta * 0.05), 2);
             } else if (event.detail) {
                 fov += Math.min((event.detail * 1.0), 2);
             }
