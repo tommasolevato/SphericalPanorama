@@ -117,7 +117,7 @@ function onDocumentMouseWheel(event) {
             getNewPanorama(panoId);
         }
         //Zoom Previous
-        if (delta < 0 & fov > 69.) { // 69. FIXME
+        if (delta < 0 & fov >= parseFloat(minZoom - 2)) { // 69. FIXME
             var previousPanoArray = getContent("previousPano", panoId);
             while (previousPanoArray.length > 0) {
                 var candidatePreviousPano = previousPanoArray.pop();
