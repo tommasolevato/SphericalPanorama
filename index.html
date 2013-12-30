@@ -107,7 +107,7 @@
                     textTexture.needsUpdate = true;
                     var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
                     //Compass
-                    var point1 = new THREE.Vector3(0, 0, 0);
+                    var point1 = new THREE.Vector3(camera.target.x, camera.target.y, camera.target.z);
                     var point2 = new THREE.Vector3(-3, 0, 210);
                     var direction = new THREE.Vector3().subVectors(point1, point2);
                     arrow = new THREE.ArrowHelper(direction.normalize(), point1);
@@ -473,16 +473,16 @@
                     var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
                     var icon = new OpenLayers.Icon('images/informazioni.png', size, offset);
 
-                    var hotspotArray = getContent("hotspotPlaced", 0);
-                    console.log(hotspotArray);
+                    var hotspotArray = getContent("hotspotPlaced");
+                    var lonLat;
                     while (hotspotArray.length > 0) {
-                        hotspotArray.pop();
-                        lonLat = new OpenLayers.LonLat(hotspotArray['EarthLongitude'], hotspotArray['EarthLatitude'])
-                                .transform(
-                                new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
-                                map.getProjectionObject() // to Spherical Mercator Projection
-                                );
-                        markers.addMarker(new OpenLayers.Marker(lonLat, icon));
+                        var hotspot = hotspotArray.pop();
+                            lonLat = new OpenLayers.LonLat(hotspot['EarthLongitude'], hotspot['EarthLatitude'])
+                                    .transform(
+                                    new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                                    map.getProjectionObject() // to Spherical Mercator Projection
+                                    );
+                        markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
                     }
                     map.addLayer(markers);
 

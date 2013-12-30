@@ -81,9 +81,9 @@ function onDocumentMouseUp(event) {
     interactiveObject = undefined;
     
     var point1 = new THREE.Vector3(-3, 0, 210);
-    var point2 = new THREE.Vector3(camera.target.x, camera.target.y, camera.target.z);
-    var direction = new THREE.Vector3().subVectors(point1, point2);
-    arrow = new THREE.ArrowHelper(direction.normalize(), point1);
+    var point2 = new THREE.Vector3(camera.target.x, -camera.target.y, camera.target.z);
+    var direction = new THREE.Vector3().subVectors(point2, point1);
+    arrow = new THREE.ArrowHelper(direction.normalize(), point2);
 
     arrow.position.set(0, 0, -5);
     camera.add(arrow);
