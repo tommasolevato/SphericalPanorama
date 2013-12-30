@@ -13,6 +13,7 @@
 
         <div id="container">
         </div>
+        <div id="mapdiv"></div>
         <div id="info">MICC - Media Integration and Communication Center
             <button id="goToRight" onclick="goToRight()">=></button>
             <button id="goToLeft" onclick="goToLeft()"><=</button>
@@ -26,6 +27,7 @@
             <script src="js/CSS3DRenderer.js"></script>
             <script src="js/hotspot.js"></script>
             <script src="js/utilities.js"></script>
+            <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
 
             <script>
                 var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element, cssObject;
@@ -37,7 +39,7 @@
                 var interactiveTexts = []; //Interactive click on Text
                 var markers = []; //Hotspot
                 var menuPoints = []; //Interactive menu
-
+                var arrow, test;
                 var fov = 70,
                         onMouseDownMouseX = 0, onMouseDownMouseY = 0,
                         lon = 0, onMouseDownLon = 0,
@@ -88,9 +90,9 @@
                     camera.target = new THREE.Vector3(0, 0, 0);
                     scene = new THREE.Scene();
                     projector = new THREE.Projector();
-                    var panoName = getContent("panorama", panoId);
+                    var pano = getContent("panorama", panoId).pop();
                     getHotspot();
-                    var texture = THREE.ImageUtils.loadTexture('textures/' + panoName);
+                    var texture = THREE.ImageUtils.loadTexture('textures/' + pano['Panorama']);
                     var geometry = new THREE.SphereGeometry(500, 60, 40);
                     mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: texture}));
                     mesh.scale.x = -1;
@@ -104,6 +106,15 @@
                     textTexture = new THREE.Texture(canvas);
                     textTexture.needsUpdate = true;
                     var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
+                    //Compass
+                    var point1 = new THREE.Vector3(0, 0, 0);
+                    var point2 = new THREE.Vector3(-3, 0, 210);
+                    var direction = new THREE.Vector3().subVectors(point1, point2);
+                    arrow = new THREE.ArrowHelper(direction.normalize(), point1);
+                    scene.add(camera);
+                    arrow.position.set(0, 0, -3);
+                    camera.add(arrow);
+                    //
                     sprite = new THREE.Sprite(spriteMaterial);
                     sprite.scale.set(200, 100, 1.0);
                     scene.add(sprite);
@@ -138,6 +149,7 @@
                     renderer.domElement.style.top = 0;
                     renderer.domElement.style.zIndex = 1;
                     rendererCSS.domElement.appendChild(renderer.domElement);
+                    makeMap();
                 }
 
                 function animate() {
@@ -188,7 +200,7 @@
                     }
                     if (found) {
                         smoothLonLatTransition(candidate['Longitude'], candidate['Latitude'], 0.5);
-                        load(candidate['ID'],candidate['LatitudeOnLoad'],candidate['LongitudeOnLoad']);
+                        load(candidate['ID'], candidate['LatitudeOnLoad'], candidate['LongitudeOnLoad']);
                     }
                     return found;
                 }
@@ -197,13 +209,14 @@
                     if (!amILoading) {
                         amILoading = true;
                         cleanUpHotSpotContent();
+                        clearMap();
                         panoId = id;
-                        var panorama=getContent("panorama", panoId);
+                        var panorama = getContent("panorama", panoId).pop();
                         ZoomArray = getContent("nextZoom", panoId);
                         //smoothLonLatTransition(longitude, latitude, 0.5);
                         fadeEffect.init('container', 0, 40);
                         setTimeout(function() {
-                            var texture = THREE.ImageUtils.loadTexture('textures/' + panorama, '', function onLoad() {
+                            var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
                                 mesh.material.map = texture;
                                 resetZoom();
                                 lat = parseFloat(latitude);
@@ -215,6 +228,7 @@
                             });
                             getHotspot();
                             preload(panoId);
+                            makeMap();
                         }, 750);
                     }
                 }
@@ -434,6 +448,58 @@
                         }
                     }
                     actualTransition();
+                }
+
+                function makeMap() {
+                    var map = new OpenLayers.Map("mapdiv");
+                    map.addLayer(new OpenLayers.Layer.OSM());
+                    var markers = new OpenLayers.Layer.Markers("Markers");
+                    var panoInfo = getContent("panorama", panoId).pop();
+                    var latitude = panoInfo['EarthLatitude'];
+                    var longitude = panoInfo['EarthLongitude'];
+                    var longitudeLatitude = new OpenLayers.LonLat(longitude, latitude)
+                            .transform(
+                            new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                            map.getProjectionObject() // to Spherical Mercator Projection
+                            );
+
+                    var zoom = 17;
+
+                    markers.addMarker(new OpenLayers.Marker(longitudeLatitude));
+
+                    map.setCenter(longitudeLatitude, zoom);
+
+                    var size = new OpenLayers.Size(15, 15);
+                    var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
+                    var icon = new OpenLayers.Icon('images/informazioni.png', size, offset);
+
+                    var hotspotArray = getContent("hotspotPlaced", 0);
+                    console.log(hotspotArray);
+                    while (hotspotArray.length > 0) {
+                        hotspotArray.pop();
+                        lonLat = new OpenLayers.LonLat(hotspotArray['EarthLongitude'], hotspotArray['EarthLatitude'])
+                                .transform(
+                                new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                                map.getProjectionObject() // to Spherical Mercator Projection
+                                );
+                        markers.addMarker(new OpenLayers.Marker(lonLat, icon));
+                    }
+                    map.addLayer(markers);
+
+                    var lgpx = new OpenLayers.Layer.Vector("Via San Leonardo", {
+                        strategies: [new OpenLayers.Strategy.Fixed()],
+                        protocol: new OpenLayers.Protocol.HTTP({
+                            url: "map/itinerario.gpx",
+                            format: new OpenLayers.Format.GPX()
+                        }),
+                        style: {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5},
+                        projection: new OpenLayers.Projection("EPSG:4326")
+                    });
+                    map.addLayer(lgpx);
+                }
+
+                function clearMap() {
+                    document.getElementById("mapdiv").innerHTML = "";
                 }
 
             </script>

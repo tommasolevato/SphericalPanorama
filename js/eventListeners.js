@@ -21,9 +21,9 @@ function onDocumentMouseDown(event) {
     if (intersects[0] !== undefined) {
 
         interactiveObject = intersects[0].object;
-        onMouseDownObjectXRotation = interactiveObject.rotation.x;
-        onMouseDownObjectYRotation = interactiveObject.rotation.y;
-        onMouseDownObjectZRotation = interactiveObject.rotation.z;
+//        onMouseDownObjectXRotation = interactiveObject.rotation.x;
+//        onMouseDownObjectYRotation = interactiveObject.rotation.y;
+//        onMouseDownObjectZRotation = interactiveObject.rotation.z;
         manageHotspot();
         //portal(..);
         //if (interactiveObject.geometry.name) {
@@ -67,17 +67,26 @@ function onDocumentMouseMove(event) {
     if (interactiveObject !== undefined && isRightClick) {
 //        interactiveObject.rotation.x = (onPointerDownPointerY - event.clientY) * 0.01 + onMouseDownObjectXRotation;
     }
-    sprite.position.set(event.clientX, event.clientY - 20, 0);
+    //sprite.position.set(event.clientX, event.clientY - 20, 0);
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     //printLonLatInfo();
 }
 
 function onDocumentMouseUp(event) {
+    camera.remove(arrow);
     event.preventDefault();
     isRightClick = false;
     isUserInteracting = false;
     interactiveObject = undefined;
+    
+    var point1 = new THREE.Vector3(-3, 0, 210);
+    var point2 = new THREE.Vector3(camera.target.x, camera.target.y, camera.target.z);
+    var direction = new THREE.Vector3().subVectors(point1, point2);
+    arrow = new THREE.ArrowHelper(direction.normalize(), point1);
+
+    arrow.position.set(0, 0, -5);
+    camera.add(arrow);
 }
 
 function onDocumentMouseWheel(event) {
@@ -162,8 +171,8 @@ function onDocumentDoubleclick(event) {
 
 function onDocumentRightClick(event) {
     isRightClick = true;
-    onHotspotClick();
-    event.preventDefault();
+    //onHotspotClick();
+    //event.preventDefault();
 }
 
 function printLonLatInfo() {

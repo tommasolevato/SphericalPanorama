@@ -39,10 +39,11 @@ and open the template in the editor.
         </section>
 
         <script>
-            var galleryId = 1;
             view();
 
             function view() {
+                var splitArray = window.location.search.split("=");
+                var galleryId=splitArray[1];
                 var mediaArray = getContent("gallery", galleryId);
                 var length = mediaArray.length;
                 var i = 1;

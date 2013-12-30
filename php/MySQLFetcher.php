@@ -54,6 +54,12 @@ class MySQLFetcher {
             case "previousPano":
                 $this->contentFetcher = new PreviousPanoFetcher();
                 break;
+            case "pdf":
+                $this->contentFetcher = new PdfFetcher();
+                break;
+            case "hotspotPlaced":
+                $this->contentFetcher = new HotspotPlacedFetcher();
+                break;
             default :
                 throw new Exception("Unknown type of content");
         }

@@ -1,0 +1,34 @@
+<html><body>
+        <div id="mapdiv"></div>
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <script>
+            function makeMap(id) {
+                var map = new OpenLayers.Map("mapdiv");
+                map.addLayer(new OpenLayers.Layer.OSM());
+
+
+                var zoom = 17;
+
+                var markers = new OpenLayers.Layer.Markers("Markers");
+                map.addLayer(markers);
+
+                markers.addMarker(new OpenLayers.Marker(lonLat));
+
+                map.setCenter(lonLat, zoom);
+                var lgpx = new OpenLayers.Layer.Vector("Lakeside cycle ride", {
+                    strategies: [new OpenLayers.Strategy.Fixed()],
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: "itinerario.gpx",
+                        format: new OpenLayers.Format.GPX()
+                    }),
+                    style: {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5},
+                    projection: new OpenLayers.Projection("EPSG:4326")
+                });
+                map.addLayer(lgpx);
+            }
+
+
+        </script>
+    </body></html>
+
+

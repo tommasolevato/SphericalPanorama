@@ -71,3 +71,17 @@ span{
 .cancel:hover{
     /*background:rgb(255,50,50);*/
 }
+
+#mapdiv{
+    position:absolute;
+    bottom:0;
+    right:0px;
+    width:25%;
+    height:25%;
+}
+
+.olControlAttribution.olControlNoSelect{
+    display: none;
+    width: 0 px;
+    height: 0 px;
+}

@@ -33,8 +33,8 @@ function cleanUpMarkers() {
 function portal(html, hotspotPosition, width, heigth, leftOrRight, color) {
     var planeMaterial = new THREE.MeshBasicMaterial({color: 0x00000, opacity: 0.1});
     var planeGeometry = new THREE.PlaneGeometry(width, heigth);
-    var cornice=15;
-    var frame = makeFrame(parseInt(width)+cornice, parseInt(heigth)+cornice, 25, 10, cornice, color);
+    var inside=30;
+    var frame = makeFrame(parseInt(width)+inside*2, parseInt(heigth)+inside*2, 50, inside, 45, color);
     objects.push(frame);//NEW
 
     planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -43,10 +43,10 @@ function portal(html, hotspotPosition, width, heigth, leftOrRight, color) {
     planeMesh.position.z = hotspotPosition.z;
 
     if (leftOrRight === "left") {
-        planeMesh.position.x += (planeMesh.geometry.width / 2) + 50;
+        planeMesh.position.x += (planeMesh.geometry.width / 2) + 30;
     }
     else {
-        planeMesh.position.x -= (planeMesh.geometry.width / 2) + 50;
+        planeMesh.position.x -= (planeMesh.geometry.width / 2) + 30;
     }
     planeMesh.lookAt(new THREE.Vector3(0, 0, 0));
     objects.push(planeMesh);
@@ -63,10 +63,10 @@ function portal(html, hotspotPosition, width, heigth, leftOrRight, color) {
     cssObject.scale.y /= (elementWidth / width);
     cssObject.position = new THREE.Vector3(planeMesh.position.x, planeMesh.position.y, planeMesh.position.z + 100);
     if (leftOrRight === "left") {
-        cssObject.position.x += 75;
+        cssObject.position.x += 135;
     }
     else {
-        cssObject.position.x -= 75;
+        cssObject.position.x -= 135;
     }
     cssObject.rotation = planeMesh.rotation;
     cssScene.add(cssObject);
@@ -165,9 +165,11 @@ function makeHotspot(position, id) {
     scene.add(torus4);
 
     //var markerTexture = THREE.ImageUtils.loadTexture('images/move_arrws_sphere.png');
-    var sphere = new THREE.Mesh(new THREE.SphereGeometry(10, 80, 120), new THREE.MeshLambertMaterial({color: 0xFF0000}));//map: markerTexture
+    var sphere = new THREE.Mesh(new THREE.SphereGeometry(10, 80, 120), new THREE.MeshLambertMaterial({color: 0x999999}));//map: markerTexture
     scene.add(sphere);
     markers.push(sphere);
+    sphere.name="Sphere";
+    sphere.hotspotId = id;
     sphere.lookAt(new THREE.Vector3(0, 0, 0));
     sphere.position = new THREE.Vector3(position.x, position.y, position.z);
     sphere.rotation.y = sphere.rotation.y + Math.PI / 2 + Math.atan(parseFloat(sphere.position.z) / parseFloat(sphere.position.x)); //FIXME
@@ -191,6 +193,27 @@ function manageHotspot() {
         }
     }
 
+    function restoreHotspotPosition(hotspotId) {
+    
+//    var hotspotArray = getContent("hotspotInfo", hotspotId);
+//    var hotspotInfo = hotspotArray.pop();
+//    //console.log(hotspotInfo);
+//    for (var i = 0; i < markers.length; i++) {
+//        if (markers[i].hotspotId === hotspotId) {
+//            markers[i].position = new THREE.Vector3(parseInt(hotspotInfo['xPosition']), parseInt(hotspotInfo['yPosition']), parseInt(hotspotInfo['zPosition']));
+//        }
+//    }
+    var found = false;
+    var i =0;
+    while(i<markers.length & !found){
+        if(markers[i].name==="Sphere" & markers[i].hotspotId===hotspotId)
+            found=true;
+        else
+            i++;
+    }
+    if(selectedFrame!==undefined)
+        selectedFrame.position= new THREE.Vector3(markers[i].position.x, markers[i].position.y, markers[i].position.z);
+}
     function rotateToHotspotPosition() {
         function searchHotspot() {
             for (var i = 0; i < hotspotArray.length; i++) {
@@ -204,13 +227,12 @@ function manageHotspot() {
         if (hotspotInfo === undefined) {
             return;
         }
-        console.log(hotspotInfo);
         var response = XYZtoLonLat(hotspotInfo["xPosition"], hotspotInfo["yPosition"], hotspotInfo["zPosition"]);
         smoothLonLatTransition(response[0], response[1], 3);
     }
 
     cleanUpHotSpotContent();
-    restoreHotspotPosition(interactiveObject.hotspotId);
+    restoreHotspotPosition(interactiveObject.hotspotId); //FIXME se c'è due volte un hotspot in diverse panoramiche
     var hotspotArray = getContent("hotspotInfo", interactiveObject.hotspotId);
 
     switch (interactiveObject.name) {
@@ -220,7 +242,8 @@ function manageHotspot() {
                 rotate(Math.PI / 2);
                 var hotspotInfo = search("Gallery");
 //                restoreHotspotPosition(interactiveObject.hotspotId);
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xffff00);
+                portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'],interactiveObject.position,
+                    hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xfcd402);
                 interactiveObject.position.x += 5;
                 selectedFrame = interactiveObject;
             }
@@ -229,7 +252,8 @@ function manageHotspot() {
                     rightPosition = false;
                     var hotspotInfo = search("Gallery");
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xffff00);
+                    portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'],interactiveObject.position,
+                        hotspotInfo["Width"], hotspotInfo["Height"], "left", 0xfcd402);
                     interactiveObject.position.x += 5;
                     selectedFrame = interactiveObject;
                 }
@@ -249,7 +273,8 @@ function manageHotspot() {
                 rotate(Math.PI / 2);
                 var hotspotInfo = search("Object");
 //                restoreHotspotPosition(interactiveObject.hotspotId);
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right", 0x00ff00);
+                portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'], interactiveObject.position,
+                    hotspotInfo["Width"], hotspotInfo["Height"], "right", 0xa1cc3a);
                 selectedFrame = interactiveObject;
                 interactiveObject.position.x -= 5;
             }
@@ -258,7 +283,8 @@ function manageHotspot() {
                     rightPosition = false;
                     var hotspotInfo = search("Object");
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x00ff00);
+                    portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'], interactiveObject.position,
+                        hotspotInfo["Width"], hotspotInfo["Height"], "right",0xa1cc3a);
                     selectedFrame = interactiveObject;
                     interactiveObject.position.x -= 5;
                 } else {
@@ -276,7 +302,8 @@ function manageHotspot() {
                 rightPosition = true;
                 rotate(-Math.PI / 2);
                 var hotspotInfo = search("Panorama");
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x0000ff);
+                portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'], interactiveObject.position,
+                    hotspotInfo["Width"], hotspotInfo["Height"], "right",0x00acec);
                 selectedFrame = interactiveObject;
                 interactiveObject.position.x -= 5;
             }
@@ -289,7 +316,8 @@ function manageHotspot() {
                 }
                 else {
                     var hotspotInfo = search("Panorama");
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "right",0x0000ff);
+                    portal(hotspotInfo['Source']+"?id="+hotspotInfo['IdName'], interactiveObject.position,
+                        hotspotInfo["Width"], hotspotInfo["Height"], "right",0x00acec);
                     interactiveObject.position.x -= 5;
                     selectedFrame = interactiveObject;
                 }
@@ -300,7 +328,9 @@ function manageHotspot() {
                 rightPosition = true;
                 rotate(-Math.PI / 2);
                 var hotspotInfo = search("PDF");
-                portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left",0xff0000);
+                var pdfSource=getContent("pdf", hotspotInfo['IdName']); //FIXME Meglio passare id
+                portal(hotspotInfo['Source']+"?id="+pdfSource, interactiveObject.position,
+                    hotspotInfo["Width"], hotspotInfo["Height"], "left",0xe1235e);
                 interactiveObject.position.x += 5;
                 selectedFrame = interactiveObject;
             }
@@ -313,7 +343,9 @@ function manageHotspot() {
                 }
                 else {
                     var hotspotInfo = search("PDF");
-                    portal(hotspotInfo['Source'], interactiveObject.position, hotspotInfo["Width"], hotspotInfo["Height"], "left",0xff0000);
+                    var pdfSource=getContent("pdf", hotspotInfo['IdName']); //FIXME Meglio passare id
+                    portal(hotspotInfo['Source']+"?id="+pdfSource, interactiveObject.position,
+                        hotspotInfo["Width"], hotspotInfo["Height"], "left",0xe1235e);
 //                    restoreHotspotPosition(interactiveObject.hotspotId);
                     interactiveObject.position.x += 5;
                     selectedFrame = interactiveObject;
@@ -331,16 +363,7 @@ function searchMarker(hotspotId, name) {
     }
 }
 
-function restoreHotspotPosition(hotspotId) {
-    var hotspotArray = getContent("hotspotInfo", hotspotId);
-    var hotspotInfo = hotspotArray.pop();
-    console.log(hotspotInfo);
-    for (var i = 0; i < markers.length; i++) {
-        if (markers[i].hotspotId === hotspotId) {
-            markers[i].position = new THREE.Vector3(parseInt(hotspotInfo['xPosition']), parseInt(hotspotInfo['yPosition']), parseInt(hotspotInfo['zPosition']));
-        }
-    }
-}
+
 
 function makeFrame(width, height, radius, inside, cornice, color) {
 

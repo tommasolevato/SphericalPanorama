@@ -20,9 +20,11 @@
            Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
            SecondaryToolbar, PasswordPrompt, PresentationMode */
 
-'use strict';
 
-var DEFAULT_URL = 'CAT_Formella04.pdf';
+var splitArray = window.location.search.split("=");
+var pdf=splitArray[1];//FIXME sarebbe molto meglio passargli un id e che si prenda da solo il sorgente
+var DEFAULT_URL = pdf;
+'use strict';
 var DEFAULT_SCALE = 'auto';
 var DEFAULT_SCALE_DELTA = 1.1;
 var UNKNOWN_SCALE = 0;
@@ -1534,6 +1536,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#if (GENERIC || B2G)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
   var file = params.file || DEFAULT_URL;
+  console.log(DEFAULT_URL);
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
 //var file = window.location.href.split('#')[0];

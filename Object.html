@@ -46,10 +46,6 @@
                     onMouseDownObjectYRotation,
                     onMouseDownObjectZRotation,
                     isRightClick = false;
-            var manager = new THREE.LoadingManager();
-            manager.onProgress = function(item, loaded, total) {
-                console.log(item, loaded, total);
-            };
             init();
             animate();
             function init() {
@@ -61,21 +57,6 @@
                     object.rotation.y = -Math.PI / 2;
                     var geometry = object.children[0].geometry;
                     THREE.GeometryUtils.center(geometry);
-//                    if (object.name === "Facciata.obj") {
-//                        object.traverse(function(child) {
-//                            if (child instanceof THREE.Mesh) {
-//                                var texture = new THREE.Texture();
-//                                var loader = new THREE.ImageLoader(manager);
-//                                loader.load('images/Facciata.jpg', function(image) {
-//                                    texture.image = image;
-//                                    texture.needsUpdate = true;
-//                                });
-//                                child.material.map = texture;
-//                                child.castShadow = true;//shadow
-//                            }
-//                        });
-//                        object.castShadow=true;
-//                    }
                     scene.add(object);
                     objects.push(object);
                 }, false);
@@ -91,8 +72,11 @@
                 plane.position.set(17, 0, 0);
                 plane.lookAt(new THREE.Vector3(0, 0, 0));
                 scene.add(plane);
-
-                loader.load('objects/corrimano.obj');
+                
+                var splitArray = window.location.search.split("=");
+                var objectId=splitArray[1];
+                var object=getContent("object", objectId);
+                loader.load('objects/'+object);
 
                 renderer = new THREE.WebGLRenderer({antialias: true});
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -101,6 +85,17 @@
                 var light = new THREE.DirectionalLight(0xffffff);
                 light.position.set(0, 0, 0);
                 light.target.position.set(10, 0, 0);
+                scene.add(light);
+
+                var light1 = new THREE.DirectionalLight(0xffffff);
+                light1.position.set(2, 0, 0);
+                light1.target.position.set(10, 0, 0);
+                scene.add(light1);
+
+                var light2 = new THREE.DirectionalLight(0xffffff);
+                light2.position.set(-2, 0, 0);
+                light2.target.position.set(10, 0, 0);
+                scene.add(light2);
                 scene.add(light);
                 //renderer.shadowMapEnabled = true;
                 light.castShadow = true;
