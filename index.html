@@ -1,508 +1,479 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>three.js webgl - Spherical Panorama by Leonardo Galli & Tommaso Levato</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <link href="css/index.css" rel="stylesheet" type="text/css">
-    </head>
-    <body>
+
+<head>
+    <title>three.js webgl - Spherical Panorama by Leonardo Galli & Tommaso Levato</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link href="css/index.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
 
 
 
 
-        <div id="container">
-        </div>
-        <div id="mapdiv"></div>
-        <div id="info">MICC - Media Integration and Communication Center
-            <button id="goToRight" onclick="goToRight()">=></button>
-            <button id="goToLeft" onclick="goToLeft()"><=</button>
-            <button id="goUp" onclick="goUp()">^</button>
-            <button id="goDown" onclick="goDown()">down</button>
-            <script src="js/Three58.js"></script>
-            <script src="js/ajaxMysql.js"></script>
-            <script src="js/jquery.min.js"></script>
-            <script src="fonts/helvetiker_regular.typeface.js"></script>
-            <script src="js/eventListeners.js"></script>
-            <script src="js/CSS3DRenderer.js"></script>
-            <script src="js/hotspot.js"></script>
-            <script src="js/utilities.js"></script>
-            <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+    <div id="container">
+    </div>
+    <div id="mapdiv"></div>
+    <div id="info">MICC - Media Integration and Communication Center
+        <button id="goToRight" onclick="goToRight()">=></button>
+        <button id="goToLeft" onclick="goToLeft()">
+            <=</button> <button id="goUp" onclick="goUp()">^
+        </button>
+        <button id="goDown" onclick="goDown()">down</button>
+        <script src="js/Three58.js"></script>
+        <script src="js/ajaxMysql.js"></script>
+        <script src="js/jquery.min.js"></script>
+        <script src="fonts/helvetiker_regular.typeface.js"></script>
+        <script src="js/eventListeners.js"></script>
+        <script src="js/CSS3DRenderer.js"></script>
+        <script src="js/hotspot.js"></script>
+        <script src="js/utilities.js"></script>
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
 
-            <script>
-                var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element, cssObject;
-                var objects = [];
-                var cssObjects = [];
-                var objectsPosition = [];
-                var textures = [];
-                var ZoomArray = []; //Zoom Next
-                var interactiveTexts = []; //Interactive click on Text
-                var markers = []; //Hotspot
-                var menuPoints = []; //Interactive menu
-                var arrow, test;
-                var fov = 70,
-                        onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-                        lon = 0, onMouseDownLon = 0,
-                        lat = 0, onMouseDownLat = 0,
-                        phi = 0, theta = 0,
-                        latLimit = -30,
-                        projector, panoId = 11,
-                        minZoom = 90, maxZoom = 20,
-                        interactiveObject,
-                        selectedFrame,
-                        onMouseDownObjectXRotation,
-                        onMouseDownObjectYRotation,
-                        onMouseDownObjectZRotation,
-                        canvas, message, context, intersectedObject, oldIntersectedMarker, mouse = {x: 0, y: 0}, textTexture, sprite, time, // Text Over
-                        amILoading = false;
-                var fadeEffect = function() {
-                    return{
-                        init: function(id, flag, target) {
-                            this.elem = document.getElementById(id);
+        <script>
+            var camera, scene, renderer, mesh, cssScene, rendererCSS, planeMesh, element, cssObject;
+            var objects = [];
+            var cssObjects = [];
+            var objectsPosition = [];
+            var textures = [];
+            var ZoomArray = [];
+            var interactiveTexts = [];
+            var markers = [];
+            var menuPoints = [];
+            var arrow, test;
+            var fov = 70,
+                onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+                lon = 0, onMouseDownLon = 0,
+                lat = 0, onMouseDownLat = 0,
+                phi = 0, theta = 0,
+                latLimit = -30,
+                projector, panoId = 11,
+                minZoom = 90, maxZoom = 20,
+                interactiveObject,
+                selectedFrame,
+                onMouseDownObjectXRotation,
+                onMouseDownObjectYRotation,
+                onMouseDownObjectZRotation,
+                canvas, message, context, intersectedObject, oldIntersectedMarker, mouse = { x: 0, y: 0 }, textTexture, sprite, time, // Text Over
+                amILoading = false;
+            var fadeEffect = function () {
+                return {
+                    init: function (id, flag, target) {
+                        this.elem = document.getElementById(id);
+                        clearInterval(this.elem.si);
+                        this.target = target ? target : flag ? 100 : 0;
+                        this.flag = flag || -1;
+                        this.alpha = this.elem.style.opacity ? parseFloat(this.elem.style.opacity) * 100 : 0;
+                        this.elem.si = setInterval(function () {
+                            fadeEffect.tween();
+                        }, 20);
+                    },
+                    tween: function () {
+                        if (this.alpha === this.target) {
                             clearInterval(this.elem.si);
-                            this.target = target ? target : flag ? 100 : 0;
-                            this.flag = flag || -1;
-                            this.alpha = this.elem.style.opacity ? parseFloat(this.elem.style.opacity) * 100 : 0;
-                            this.elem.si = setInterval(function() {
-                                fadeEffect.tween();
-                            }, 20);
-                        },
-                        tween: function() {
-                            if (this.alpha === this.target) {
-                                clearInterval(this.elem.si);
-                            } else {
-                                var value = Math.round(this.alpha + ((this.target - this.alpha) * .05)) + (1 * this.flag);
-                                this.elem.style.opacity = value / 100;
-                                this.elem.style.filter = 'alpha(opacity=' + value + ')';
-                                this.alpha = value;
-                            }
+                        } else {
+                            var value = Math.round(this.alpha + ((this.target - this.alpha) * .05)) + (1 * this.flag);
+                            this.elem.style.opacity = value / 100;
+                            this.elem.style.filter = 'alpha(opacity=' + value + ')';
+                            this.alpha = value;
                         }
-                    };
-                }();
-                init();
-                setTimeout(function() {
-                    animate();
-                }, 1000);
-                function init() {
-                    fadeEffect.init('container', 1);
-                    var container = document.getElementById('container');
-                    camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
-                    camera.target = new THREE.Vector3(0, 0, 0);
-                    scene = new THREE.Scene();
-                    projector = new THREE.Projector();
-                    var pano = getContent("panorama", panoId).pop();
-                    getHotspot();
-                    var texture = THREE.ImageUtils.loadTexture('textures/' + pano['Panorama']);
-                    var geometry = new THREE.SphereGeometry(500, 60, 40);
-                    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({map: texture}));
-                    mesh.scale.x = -1;
-                    scene.add(mesh);
-                    var pointLight = new THREE.PointLight(0xFFFFFF);
-                    scene.add(pointLight);
+                    }
+                };
+            }();
+            init();
+            setTimeout(function () {
+                animate();
+            }, 1000);
+            function init() {
+                fadeEffect.init('container', 1);
+                var container = document.getElementById('container');
+                camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1100);
+                camera.target = new THREE.Vector3(0, 0, 0);
+                scene = new THREE.Scene();
+                projector = new THREE.Projector();
+                var pano = getContent("panorama", panoId).pop();
+                getHotspot();
+                var texture = THREE.ImageUtils.loadTexture('textures/' + pano['Panorama']);
+                var geometry = new THREE.SphereGeometry(500, 60, 40);
+                mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: texture }));
+                mesh.scale.x = -1;
+                scene.add(mesh);
+                var pointLight = new THREE.PointLight(0xFFFFFF);
+                scene.add(pointLight);
+                ZoomArray = getContent("nextZoom", panoId);
+                canvas = document.createElement('canvas');
+                context = canvas.getContext('2d');
+                context.font = "Bold 20px Arial";
+                textTexture = new THREE.Texture(canvas);
+                textTexture.needsUpdate = true;
+                var spriteMaterial = new THREE.SpriteMaterial({ map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft });
+
+                var point1 = new THREE.Vector3(camera.target.x, camera.target.y, camera.target.z);
+                var point2 = new THREE.Vector3(-3, 0, 210);
+                var direction = new THREE.Vector3().subVectors(point1, point2);
+                arrow = new THREE.ArrowHelper(direction.normalize(), point1);
+                scene.add(camera);
+                arrow.position.set(0, 0, -3);
+                camera.add(arrow);
+
+                sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(200, 100, 1.0);
+                scene.add(sprite);
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.domElement.style.position = 'absolute';
+                renderer.domElement.style.top = 0;
+                renderer.domElement.style.zIndex = 1;
+                container.appendChild(renderer.domElement);
+                document.addEventListener('contextmenu', onDocumentRightClick, false);
+                document.addEventListener('mousedown', onDocumentMouseDown, false);
+                document.addEventListener('mousemove', onDocumentMouseMove, false);
+                document.addEventListener('mouseup', onDocumentMouseUp, false);
+                document.addEventListener('mousewheel', onDocumentMouseWheel, false);
+                document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
+                document.addEventListener('dblclick', onDocumentDoubleclick, false);
+                window.addEventListener('resize', onWindowResize, false);
+                setTimeout(function () {
+                    preload(panoId);
+                }, 2000);
+                cssScene = new THREE.Scene();
+                element = document.createElement('iframe');
+                element.frameBorder = "0";
+                rendererCSS = new THREE.CSS3DRenderer();
+                rendererCSS.setSize(window.innerWidth, window.innerHeight);
+                rendererCSS.domElement.style.position = 'absolute';
+                rendererCSS.domElement.style.top = 100;
+                rendererCSS.domElement.style.margin = 0;
+                rendererCSS.domElement.style.padding = 0;
+                container.appendChild(rendererCSS.domElement);
+                renderer.domElement.style.position = 'absolute';
+                renderer.domElement.style.top = 0;
+                renderer.domElement.style.zIndex = 1;
+                rendererCSS.domElement.appendChild(renderer.domElement);
+                makeMap();
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                render();
+            }
+
+            function render() {
+                lat = Math.max(-85, Math.min(85, lat));
+                phi = THREE.Math.degToRad(90 - lat);
+                theta = THREE.Math.degToRad(lon);
+                camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+                camera.target.y = 500 * Math.cos(phi);
+                camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+                camera.lookAt(camera.target);
+                renderer.render(scene, camera);
+                rendererCSS.render(cssScene, camera);
+            }
+
+            function mod(num, mod) {
+                var remain = num % mod;
+                return Math.floor(remain >= 0 ? remain : remain + mod);
+            }
+
+            function isNextPano(candidate) {
+                return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
+            }
+
+            function whichTransitionDirection() {
+                var i = 0;
+                var found = false;
+                while (i < ZoomArray.length && !found) {
+                    if (Math.abs(lat - ZoomArray[i]['Latitude']) < 20 && Math.abs(lon - ZoomArray[i]['Longitude']) < 20) {
+                        found = true;
+                        return i;
+                    }
+                    i++;
+                }
+            }
+
+            function getNewPanorama(id) {
+                var panoArray = getContent("nextPanoramas", id);
+                var found = false;
+                while (panoArray.length > 0 && !found) {
+                    var candidate = panoArray.pop();
+                    found = isNextPano(candidate);
+                }
+                if (found) {
+                    smoothLonLatTransition(candidate['Longitude'], candidate['Latitude'], 0.5);
+                    load(candidate['ID'], candidate['LatitudeOnLoad'], candidate['LongitudeOnLoad']);
+                }
+                return found;
+            }
+
+            function load(id, latitude, longitude) { //FIXME
+                if (!amILoading) {
+                    amILoading = true;
+                    cleanUpHotSpotContent();
+                    clearMap();
+                    panoId = id;
+                    var panorama = getContent("panorama", panoId).pop();
                     ZoomArray = getContent("nextZoom", panoId);
-                    canvas = document.createElement('canvas');
-                    context = canvas.getContext('2d');
-                    context.font = "Bold 20px Arial";
-                    textTexture = new THREE.Texture(canvas);
-                    textTexture.needsUpdate = true;
-                    var spriteMaterial = new THREE.SpriteMaterial({map: textTexture, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft});
-                    //Compass
-                    var point1 = new THREE.Vector3(camera.target.x, camera.target.y, camera.target.z);
-                    var point2 = new THREE.Vector3(-3, 0, 210);
-                    var direction = new THREE.Vector3().subVectors(point1, point2);
-                    arrow = new THREE.ArrowHelper(direction.normalize(), point1);
-                    scene.add(camera);
-                    arrow.position.set(0, 0, -3);
-                    camera.add(arrow);
-                    //
-                    sprite = new THREE.Sprite(spriteMaterial);
-                    sprite.scale.set(200, 100, 1.0);
-                    scene.add(sprite);
-                    renderer = new THREE.WebGLRenderer({antialias: true});
-                    renderer.setSize(window.innerWidth, window.innerHeight);
-                    renderer.domElement.style.position = 'absolute';
-                    renderer.domElement.style.top = 0;
-                    renderer.domElement.style.zIndex = 1;
-                    container.appendChild(renderer.domElement);
-                    document.addEventListener('contextmenu', onDocumentRightClick, false);
-                    document.addEventListener('mousedown', onDocumentMouseDown, false);
-                    document.addEventListener('mousemove', onDocumentMouseMove, false);
-                    document.addEventListener('mouseup', onDocumentMouseUp, false);
-                    document.addEventListener('mousewheel', onDocumentMouseWheel, false);
-                    document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
-                    document.addEventListener('dblclick', onDocumentDoubleclick, false);
-                    window.addEventListener('resize', onWindowResize, false);
-                    setTimeout(function() {
+
+                    fadeEffect.init('container', 0, 40);
+                    setTimeout(function () {
+                        var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
+                            mesh.material.map = texture;
+                            resetZoom();
+                            lat = parseFloat(latitude);
+                            lon = parseFloat(longitude);
+                            fadeEffect.init('container', 1);
+                            setTimeout(function () {
+                                amILoading = false;
+                            }, 1000);
+                        });
+                        getHotspot();
                         preload(panoId);
-                    }, 2000);
-                    cssScene = new THREE.Scene();
-                    element = document.createElement('iframe');
-                    element.frameBorder = "0";
-                    rendererCSS = new THREE.CSS3DRenderer();
-                    rendererCSS.setSize(window.innerWidth, window.innerHeight);
-                    rendererCSS.domElement.style.position = 'absolute';
-                    rendererCSS.domElement.style.top = 100;
-                    rendererCSS.domElement.style.margin = 0;
-                    rendererCSS.domElement.style.padding = 0;
-                    container.appendChild(rendererCSS.domElement);
-                    renderer.domElement.style.position = 'absolute';
-                    renderer.domElement.style.top = 0;
-                    renderer.domElement.style.zIndex = 1;
-                    rendererCSS.domElement.appendChild(renderer.domElement);
-                    makeMap();
+                        makeMap();
+                    }, 750);
                 }
+            }
 
-                function animate() {
-                    requestAnimationFrame(animate);
-                    //update();
-                    render();
+            function preload(panoId) {
+                var panoArray = getContent("nextPanoramas", panoId);
+                for (var i = 0; i < panoArray.length; i++) {
+                    var panorama = panoArray[i];
+                    var image = new Image();
+                    image.src = "textures/" + panorama['Panorama'];
                 }
+            }
 
-                function render() {
-                    lat = Math.max(-85, Math.min(85, lat));
-                    phi = THREE.Math.degToRad(90 - lat);
-                    theta = THREE.Math.degToRad(lon);
-                    camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
-                    camera.target.y = 500 * Math.cos(phi);
-                    camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
-                    camera.lookAt(camera.target);
-                    renderer.render(scene, camera);
-                    rendererCSS.render(cssScene, camera);
-                }
+            function update() {
+                var d = new Date();
+                var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                projector.unprojectVector(vector, camera);
+                var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+                var intersects = ray.intersectObjects(markers, true);
+                if (intersects.length === 0)
+                    intersects = ray.intersectObjects(menuPoints, true);
+                else
+                    var interactingHotspot = true;
+                if (intersects.length === 0)
+                    intersects = ray.intersectObjects(interactiveTexts, true);
+                if (intersects.length > 0) {
+                    if (intersects[0] !== intersectedObject) {
 
-                function mod(num, mod) {
-                    var remain = num % mod;
-                    return Math.floor(remain >= 0 ? remain : remain + mod);
-                }
+                        time = d.getTime();
+                        intersectedObject = intersects[0].object;
 
-                function isNextPano(candidate) {
-                    return (Math.abs(lat - candidate['Latitude']) < 20 && Math.abs(lon - candidate['Longitude']) < 20);
-                }
+                        if (menuPoints.length === 0) {
+                            var parent = new THREE.Object3D();
+                            parent.position.copy(intersectedObject.position);
+                            parent.lookAt(new THREE.Vector3(0, 0, 0));
+                            scene.add(parent);
 
-                function whichTransitionDirection() {
-                    var i = 0;
-                    var found = false;
-                    while (i < ZoomArray.length && !found) {
-                        if (Math.abs(lat - ZoomArray[i]['Latitude']) < 20 && Math.abs(lon - ZoomArray[i]['Longitude']) < 20) {
-                            found = true;
-                            return i;
-                        }
-                        i++;
-                    }
-                }
-
-                function getNewPanorama(id) {
-                    var panoArray = getContent("nextPanoramas", id);
-                    var found = false;
-                    while (panoArray.length > 0 && !found) {
-                        var candidate = panoArray.pop();
-                        found = isNextPano(candidate);
-                    }
-                    if (found) {
-                        smoothLonLatTransition(candidate['Longitude'], candidate['Latitude'], 0.5);
-                        load(candidate['ID'], candidate['LatitudeOnLoad'], candidate['LongitudeOnLoad']);
-                    }
-                    return found;
-                }
-
-                function load(id, latitude, longitude) { //FIXME
-                    if (!amILoading) {
-                        amILoading = true;
-                        cleanUpHotSpotContent();
-                        clearMap();
-                        panoId = id;
-                        var panorama = getContent("panorama", panoId).pop();
-                        ZoomArray = getContent("nextZoom", panoId);
-                        //smoothLonLatTransition(longitude, latitude, 0.5);
-                        fadeEffect.init('container', 0, 40);
-                        setTimeout(function() {
-                            var texture = THREE.ImageUtils.loadTexture('textures/' + panorama['Panorama'], '', function onLoad() {
-                                mesh.material.map = texture;
-                                resetZoom();
-                                lat = parseFloat(latitude);
-                                lon = parseFloat(longitude);
-                                fadeEffect.init('container', 1);
-                                setTimeout(function() {
-                                    amILoading = false;
-                                }, 1000);
-                            });
-                            getHotspot();
-                            preload(panoId);
-                            makeMap();
-                        }, 750);
-                    }
-                }
-
-                function preload(panoId) {
-                    var panoArray = getContent("nextPanoramas", panoId);
-                    for (var i = 0; i < panoArray.length; i++) {
-                        var panorama = panoArray[i];
-                        var image = new Image();
-                        image.src = "textures/" + panorama['Panorama'];
-                    }
-                }
-
-                function update() {
-                    var d = new Date();
-                    var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-                    projector.unprojectVector(vector, camera);
-                    var ray = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-                    var intersects = ray.intersectObjects(markers, true);
-                    if (intersects.length === 0)
-                        intersects = ray.intersectObjects(menuPoints, true);
-                    else
-                        var interactingHotspot = true;
-                    if (intersects.length === 0)
-                        intersects = ray.intersectObjects(interactiveTexts, true);
-                    if (intersects.length > 0) {
-                        if (intersects[0] !== intersectedObject) {
-
-                            time = d.getTime();
-                            intersectedObject = intersects[0].object;
-                            //Menu sphere
-                            if (menuPoints.length === 0) {//scene.children[scene.children.length-1].name !== "textMenu"
-                                var parent = new THREE.Object3D();
-                                parent.position.copy(intersectedObject.position);
-                                parent.lookAt(new THREE.Vector3(0, 0, 0));
-                                scene.add(parent);
-
-                                var idHotspot = intersects[0].object.name;
-                                var infoArray = getContent("hotspotInfo", idHotspot);
-                                var menuLength = infoArray.length;
-                                message = infoArray[0]['Subject'];
-                                var i = 0;
-                                while (infoArray.length > 0) {
-                                    var info = infoArray.pop();
-                                    if (info !== undefined) {
-                                        var textGeo = new THREE.TextGeometry(info['Name'], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
-                                        textGeo.name = info['Name'];
-                                        var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
-                                        var textMesh = new THREE.Mesh(textGeo, material);
-                                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
-                                        var abbassamento = -i * 2 / menuLength + 0.17 * menuLength;
-                                        sphere.position.set(0.6, abbassamento, 0);
-                                        relativePosition(parent, sphere);
-                                        textMesh.position.set(0.8, abbassamento - 0.15, 0);
-                                        relativePosition(parent, textMesh);
-                                        textMesh.lookAt(new THREE.Vector3(0, 0, 0));
-                                        textMesh.name = intersects[0].object.name + " " + info['Name'];
-                                        sphere.name = intersects[0].object.name + " " + info['Name'];
-                                        menuPoints.push(sphere);
-                                        interactiveTexts.push(textMesh);
-                                        scene.add(sphere);
-                                        scene.add(textMesh);
-                                        i++;
-                                    }
+                            var idHotspot = intersects[0].object.name;
+                            var infoArray = getContent("hotspotInfo", idHotspot);
+                            var menuLength = infoArray.length;
+                            message = infoArray[0]['Subject'];
+                            var i = 0;
+                            while (infoArray.length > 0) {
+                                var info = infoArray.pop();
+                                if (info !== undefined) {
+                                    var textGeo = new THREE.TextGeometry(info['Name'], { size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker" });
+                                    textGeo.name = info['Name'];
+                                    var material = new THREE.MeshBasicMaterial({ color: 0xE88A25 });
+                                    var textMesh = new THREE.Mesh(textGeo, material);
+                                    var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({ color: 0xE88A25 }));
+                                    var abbassamento = -i * 2 / menuLength + 0.17 * menuLength;
+                                    sphere.position.set(0.6, abbassamento, 0);
+                                    relativePosition(parent, sphere);
+                                    textMesh.position.set(0.8, abbassamento - 0.15, 0);
+                                    relativePosition(parent, textMesh);
+                                    textMesh.lookAt(new THREE.Vector3(0, 0, 0));
+                                    textMesh.name = intersects[0].object.name + " " + info['Name'];
+                                    sphere.name = intersects[0].object.name + " " + info['Name'];
+                                    menuPoints.push(sphere);
+                                    interactiveTexts.push(textMesh);
+                                    scene.add(sphere);
+                                    scene.add(textMesh);
+                                    i++;
                                 }
                             }
-//                                if (info !== undefined) {
-//                                    //var menu = info['Menu'].split("/");
-//                                    message = info['Subject'];
-//                                    var parent = new THREE.Object3D();
-//                                    parent.position.copy(intersectedObject.position);
-//                                    parent.lookAt(new THREE.Vector3(0, 0, 0));
-//                                    scene.add(parent);
-//                                    var i = 0;
-//                                    while (i < menu.length) {
-//                                        var textGeo = new THREE.TextGeometry(menu[i], {size: 0.3, height: 0.04, curveSegments: 8, font: "helvetiker"});
-//                                        textGeo.name = menu[i];
-//                                        var material = new THREE.MeshBasicMaterial({color: 0xE88A25});
-//                                        var textMesh = new THREE.Mesh(textGeo, material);
-//                                        var sphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 40, 60), new THREE.MeshBasicMaterial({color: 0xE88A25}));
-//                                        var abbassamento = -i * 2 / menu.length + 0.17 * menu.length;
-//                                        sphere.position.set(0.6, abbassamento, 0);
-//                                        relativePosition(parent, sphere);
-//                                        textMesh.position.set(0.8, abbassamento - 0.15, 0);
-//                                        relativePosition(parent, textMesh);
-//                                        textMesh.lookAt(new THREE.Vector3(0, 0, 0));
-//                                        textMesh.name = intersects[0].object.name + " " + menu[i];
-//                                        sphere.name = intersects[0].object.name + " " + menu[i];
-//                                        menuPoints.push(sphere);
-//                                        interactiveTexts.push(textMesh);
-//                                        scene.add(sphere);
-//                                        scene.add(textMesh);
-//                                        i++;
-//                                    }
-//                                }
-//                            }
-                            //
-                            if (interactingHotspot) {
-                                //serve per più marker
-                                if (oldIntersectedMarker !== undefined && oldIntersectedMarker.position !== intersectedObject.position) {
-                                    clearOver();
-                                }
-                                context.clearRect(0, 0, 640, 480);
-                                var metrics = context.measureText(message);
-                                var width = metrics.width;
-                                context.fillStyle = "rgba(0,0,0,0.95)"; // black border
-                                context.fillRect(0, 0, width + 8, 20 + 8);
-                                context.fillStyle = "rgba(255,255,255,0.95)"; // white filler
-                                context.fillRect(2, 2, width + 4, 20 + 4);
-                                context.fillStyle = "rgba(0,0,0,1)"; // text color
-                                context.fillText(message, 4, 20);
-                                textTexture.needsUpdate = true;
-                                oldIntersectedMarker = intersectedObject;
+                        }
+                        if (interactingHotspot) {
+                            if (oldIntersectedMarker !== undefined && oldIntersectedMarker.position !== intersectedObject.position) {
+                                clearOver();
                             }
-                            else {
-                                context.clearRect(0, 0, 300, 300);
-                                textTexture.needsUpdate = true;
-                            }
+                            context.clearRect(0, 0, 640, 480);
+                            var metrics = context.measureText(message);
+                            var width = metrics.width;
+                            context.fillStyle = "rgba(0,0,0,0.95)";
+                            context.fillRect(0, 0, width + 8, 20 + 8);
+                            context.fillStyle = "rgba(255,255,255,0.95)";
+                            context.fillRect(2, 2, width + 4, 20 + 4);
+                            context.fillStyle = "rgba(0,0,0,1)";
+                            context.fillText(message, 4, 20);
+                            textTexture.needsUpdate = true;
+                            oldIntersectedMarker = intersectedObject;
+                        }
+                        else {
+                            context.clearRect(0, 0, 300, 300);
+                            textTexture.needsUpdate = true;
                         }
                     }
+                }
 
-                    else {
-                        intersectedObject = null;
-                        if (d.getTime() >= time + 2000) {
-                            clearOver();
+                else {
+                    intersectedObject = null;
+                    if (d.getTime() >= time + 2000) {
+                        clearOver();
+                    }
+                }
+            }
+
+
+            function relativePosition(parent, child) {
+                parent.add(child);
+                scene.updateMatrixWorld();
+                var vector = new THREE.Vector3();
+                var position = vector.getPositionFromMatrix(child.matrixWorld);
+                child.position.copy(position);
+            }
+
+            function clearOver() {
+                context.clearRect(0, 0, 300, 300);
+                textTexture.needsUpdate = true;
+                while (menuPoints.length > 0) {
+                    var point = menuPoints.pop();
+                    var text = interactiveTexts.pop();
+                    scene.remove(point);
+                    scene.remove(text);
+                }
+            }
+
+            function smoothLonLatTransition(targetLon, targetLat, step) {
+                var stepsNeeded;
+                var lonDistance = Math.abs(lon - targetLon);
+                var latDistance = Math.abs(lat - targetLat);
+
+                if (lonDistance > latDistance) {
+                    stepsNeeded = Math.floor(lonDistance / step);
+                }
+                else {
+                    stepsNeeded = Math.floor(latDistance / step);
+                }
+
+                var lonStep = lonDistance / stepsNeeded;
+                var latStep = latDistance / stepsNeeded;
+
+                if (targetLon < lon) {
+                    lonStep = 0 - lonStep;
+                }
+
+                if (targetLat < lat) {
+                    latStep = 0 - latStep;
+                }
+
+                var stepsDone = 0;
+                var actualTransition = function () {
+                    if (stepsDone < stepsNeeded) {
+                        stepsDone++;
+                        lon += lonStep;
+                        lat += latStep;
+                        requestAnimationFrame(actualTransition);
+                    }
+                };
+
+                actualTransition();
+            }
+
+            function goToRight() {
+                smoothLonLatTransition(lon + 60, lat, 0.5);
+            }
+
+            function goToLeft() {
+                smoothLonLatTransition(lon - 60, lat, 0.5);
+            }
+
+            function goUp() {
+                smoothLonLatTransition(lon, lat + 15, 0.5);
+            }
+
+            function goDown() {
+                var newLat = lat - 15;
+                if (newLat >= latLimit) {
+                    smoothLonLatTransition(lon, newLat, 0.5);
+                }
+            }
+
+            function smoothZRotationTransition(object, rotationDelta, step) {
+                var stepsNeeded = Math.abs(Math.floor(rotationDelta / step));
+                var stepsDone = 0;
+                var actualTransition = function () {
+                    if (stepsDone < stepsNeeded) {
+                        stepsDone++;
+                        if (rotationDelta > 0) {
+                            object.rotation.z += step;
                         }
+                        else
+                            object.rotation.z -= step;
+                        requestAnimationFrame(actualTransition);
                     }
                 }
+                actualTransition();
+            }
 
+            function makeMap() {
+                var map = new OpenLayers.Map("mapdiv");
+                map.addLayer(new OpenLayers.Layer.OSM());
+                var markers = new OpenLayers.Layer.Markers("Markers");
+                var panoInfo = getContent("panorama", panoId).pop();
+                var latitude = panoInfo['EarthLatitude'];
+                var longitude = panoInfo['EarthLongitude'];
+                var longitudeLatitude = new OpenLayers.LonLat(longitude, latitude)
+                    .transform(
+                        new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                        map.getProjectionObject() // to Spherical Mercator Projection
+                    );
 
-                function relativePosition(parent, child) {
-                    parent.add(child);
-                    scene.updateMatrixWorld();
-                    var vector = new THREE.Vector3();
-                    var position = vector.getPositionFromMatrix(child.matrixWorld);
-                    child.position.copy(position);
-                }
+                var zoom = 17;
 
-                function clearOver() {
-                    context.clearRect(0, 0, 300, 300);
-                    textTexture.needsUpdate = true;
-                    while (menuPoints.length > 0) {
-                        var point = menuPoints.pop();
-                        var text = interactiveTexts.pop();
-                        scene.remove(point);
-                        scene.remove(text);
-                    }
-                }
+                markers.addMarker(new OpenLayers.Marker(longitudeLatitude));
 
-                function smoothLonLatTransition(targetLon, targetLat, step) {
-                    var stepsNeeded;
-                    var lonDistance = Math.abs(lon - targetLon);
-                    var latDistance = Math.abs(lat - targetLat);
+                map.setCenter(longitudeLatitude, zoom);
 
-                    if (lonDistance > latDistance) {
-                        stepsNeeded = Math.floor(lonDistance / step);
-                    }
-                    else {
-                        stepsNeeded = Math.floor(latDistance / step);
-                    }
+                var size = new OpenLayers.Size(15, 15);
+                var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
+                var icon = new OpenLayers.Icon('images/informazioni.png', size, offset);
 
-                    var lonStep = lonDistance / stepsNeeded;
-                    var latStep = latDistance / stepsNeeded;
-
-                    if (targetLon < lon) {
-                        lonStep = 0 - lonStep;
-                    }
-
-                    if (targetLat < lat) {
-                        latStep = 0 - latStep;
-                    }
-
-                    var stepsDone = 0;
-                    var actualTransition = function() {
-                        if (stepsDone < stepsNeeded) {
-                            stepsDone++;
-                            lon += lonStep;
-                            lat += latStep;
-                            requestAnimationFrame(actualTransition);
-                        }
-                    };
-
-                    actualTransition();
-                }
-
-                function goToRight() {
-                    smoothLonLatTransition(lon + 60, lat, 0.5);
-                }
-
-                function goToLeft() {
-                    smoothLonLatTransition(lon - 60, lat, 0.5);
-                }
-
-                function goUp() {
-                    smoothLonLatTransition(lon, lat + 15, 0.5);
-                }
-
-                function goDown() {
-                    var newLat = lat - 15;
-                    if (newLat >= latLimit) {
-                        smoothLonLatTransition(lon, newLat, 0.5);
-                    }
-                }
-
-                function smoothZRotationTransition(object, rotationDelta, step) {
-                    var stepsNeeded = Math.abs(Math.floor(rotationDelta / step));
-                    var stepsDone = 0;
-                    var actualTransition = function() {
-                        if (stepsDone < stepsNeeded) {
-                            stepsDone++;
-                            if (rotationDelta > 0) {
-                                object.rotation.z += step;
-                            }
-                            else
-                                object.rotation.z -= step;
-                            requestAnimationFrame(actualTransition);
-                        }
-                    }
-                    actualTransition();
-                }
-
-                function makeMap() {
-                    var map = new OpenLayers.Map("mapdiv");
-                    map.addLayer(new OpenLayers.Layer.OSM());
-                    var markers = new OpenLayers.Layer.Markers("Markers");
-                    var panoInfo = getContent("panorama", panoId).pop();
-                    var latitude = panoInfo['EarthLatitude'];
-                    var longitude = panoInfo['EarthLongitude'];
-                    var longitudeLatitude = new OpenLayers.LonLat(longitude, latitude)
-                            .transform(
+                var hotspotArray = getContent("hotspotPlaced");
+                var lonLat;
+                while (hotspotArray.length > 0) {
+                    var hotspot = hotspotArray.pop();
+                    lonLat = new OpenLayers.LonLat(hotspot['EarthLongitude'], hotspot['EarthLatitude'])
+                        .transform(
                             new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
                             map.getProjectionObject() // to Spherical Mercator Projection
-                            );
-
-                    var zoom = 17;
-
-                    markers.addMarker(new OpenLayers.Marker(longitudeLatitude));
-
-                    map.setCenter(longitudeLatitude, zoom);
-
-                    var size = new OpenLayers.Size(15, 15);
-                    var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
-                    var icon = new OpenLayers.Icon('images/informazioni.png', size, offset);
-
-                    var hotspotArray = getContent("hotspotPlaced");
-                    var lonLat;
-                    while (hotspotArray.length > 0) {
-                        var hotspot = hotspotArray.pop();
-                            lonLat = new OpenLayers.LonLat(hotspot['EarthLongitude'], hotspot['EarthLatitude'])
-                                    .transform(
-                                    new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
-                                    map.getProjectionObject() // to Spherical Mercator Projection
-                                    );
-                        markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
-                    }
-                    map.addLayer(markers);
-
-                    var lgpx = new OpenLayers.Layer.Vector("Via San Leonardo", {
-                        strategies: [new OpenLayers.Strategy.Fixed()],
-                        protocol: new OpenLayers.Protocol.HTTP({
-                            url: "map/itinerario.gpx",
-                            format: new OpenLayers.Format.GPX()
-                        }),
-                        style: {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5},
-                        projection: new OpenLayers.Projection("EPSG:4326")
-                    });
-                    map.addLayer(lgpx);
+                        );
+                    markers.addMarker(new OpenLayers.Marker(lonLat, icon.clone()));
                 }
+                map.addLayer(markers);
 
-                function clearMap() {
-                    document.getElementById("mapdiv").innerHTML = "";
-                }
+                var lgpx = new OpenLayers.Layer.Vector("Via San Leonardo", {
+                    strategies: [new OpenLayers.Strategy.Fixed()],
+                    protocol: new OpenLayers.Protocol.HTTP({
+                        url: "map/itinerario.gpx",
+                        format: new OpenLayers.Format.GPX()
+                    }),
+                    style: { strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5 },
+                    projection: new OpenLayers.Projection("EPSG:4326")
+                });
+                map.addLayer(lgpx);
+            }
 
-            </script>
-        </div>
-    </body>
+            function clearMap() {
+                document.getElementById("mapdiv").innerHTML = "";
+            }
+
+        </script>
+    </div>
+</body>
+
 </html>

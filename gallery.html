@@ -4,78 +4,78 @@ and open the template in the editor.
 -->
 <!DOCTYPE html>
 <html>
-    <head>
-        <title></title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <style>
-            section {
-                position:absolute;
-                left:7.5%;
-                text-align: center;
-                max-width:85%;
-            }
-            .grid {
-                max-width:800px;
-                display:inline-block;
-                width:200px;
-                height:200px;
-                box-shadow: 5px 5px 5px #888888;
-                margin: 6px 6px 0px 0px;
-                border-radius: 4px;
-            }
-            body{
-                background-color: #FFFFFF;
-            }
-        </style>
-        <script type="text/javascript" src="html5lightbox/jquery.js"></script>
-        <script type="text/javascript" src="html5lightbox/html5lightbox.js"></script>
-        <script type="text/javascript" src="js/ajaxMysql.js"></script>
 
-    </head>
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+        section {
+            position: absolute;
+            left: 7.5%;
+            text-align: center;
+            max-width: 85%;
+        }
 
-    <body>
-        <section id="picture">
-            <!--<a href="images/Facciata.jpg" class="html5lightbox" data-group="mygroup" ><img class="grid" src="images/FormellaCroce.jpg" /></a>-->
-        </section>
+        .grid {
+            max-width: 800px;
+            display: inline-block;
+            width: 200px;
+            height: 200px;
+            box-shadow: 5px 5px 5px #888888;
+            margin: 6px 6px 0px 0px;
+            border-radius: 4px;
+        }
 
-        <script>
-            view();
+        body {
+            background-color: #FFFFFF;
+        }
+    </style>
+    <script type="text/javascript" src="html5lightbox/jquery.js"></script>
+    <script type="text/javascript" src="html5lightbox/html5lightbox.js"></script>
+    <script type="text/javascript" src="js/ajaxMysql.js"></script>
 
-            function view() {
-                var splitArray = window.location.search.split("=");
-                var galleryId=splitArray[1];
-                var mediaArray = getContent("gallery", galleryId);
-                var length = mediaArray.length;
-                var i = 1;
-                var popup = document.createElement('div');
-                while (mediaArray.length > 0) {
-                    var media = mediaArray.pop();
-                    var text = '<a href="images/';
-                    text += media['Source'] + '"';
-                    text += ' class="html5lightbox"';
-                    if (media['Title'] !== null) {
-                        text += ' title="' + i.toString() + "/" + length.toString() + " " + media['Title'] + '"';
-                    }
-                    else
-                        text += ' title="' + i.toString() + "/" + length.toString() + '"';
-                    if (media['Width'] !== null) {
-                        text += 'data-width="' + media['Width'].toString() + '"';
-                    }
-                    if (media['Height'] !== null) {
-                        text += 'data-height="' + media['Height'].toString() + '"';
-                    }
-                    text += ' data-group="mygroup">';
-                    text += '<img class="grid" src="images/';
-                    text += media['Thumbnail'] + '"/></a>';
-                    console.log(text);
-                    popup.innerHTML = popup.innerHTML + text;
-                    i++;
+</head>
+
+<body>
+    <script>
+        view();
+
+        function view() {
+            var splitArray = window.location.search.split("=");
+            var galleryId = splitArray[1];
+            var mediaArray = getContent("gallery", galleryId);
+            var length = mediaArray.length;
+            var i = 1;
+            var popup = document.createElement('div');
+            while (mediaArray.length > 0) {
+                var media = mediaArray.pop();
+                var text = '<a href="images/';
+                text += media['Source'] + '"';
+                text += ' class="html5lightbox"';
+                if (media['Title'] !== null) {
+                    text += ' title="' + i.toString() + "/" + length.toString() + " " + media['Title'] + '"';
                 }
-                var section = document.getElementById("picture");
-                section.appendChild(popup);
+                else
+                    text += ' title="' + i.toString() + "/" + length.toString() + '"';
+                if (media['Width'] !== null) {
+                    text += 'data-width="' + media['Width'].toString() + '"';
+                }
+                if (media['Height'] !== null) {
+                    text += 'data-height="' + media['Height'].toString() + '"';
+                }
+                text += ' data-group="mygroup">';
+                text += '<img class="grid" src="images/';
+                text += media['Thumbnail'] + '"/></a>';
+                console.log(text);
+                popup.innerHTML = popup.innerHTML + text;
+                i++;
             }
+            var section = document.getElementById("picture");
+            section.appendChild(popup);
+        }
 
-        </script>
+    </script>
 
-    </body>
+</body>
+
 </html>
